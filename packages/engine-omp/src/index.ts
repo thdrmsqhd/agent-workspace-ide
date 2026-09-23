@@ -5,6 +5,7 @@ import { ProcessTreeSupervisor, type OwnedProcessHandle, type ProcessRole } from
 
 type Json = null | boolean | number | string | Json[] | { [key: string]: Json };
 type Frame = { [key: string]: Json };
+export type RpcFrame = Frame;
 
 interface Pending {
   readonly resolve: (value: Frame) => void;
@@ -141,6 +142,46 @@ export class OmpEngineAdapter {
     if (!sessionPath.trim()) throw new Error("전환할 OMP 세션 경로가 필요합니다.");
     const response = await this.send({ type: "switch_session", sessionPath });
     if (response.success === false) throw new Error(typeof response.error === "string" ? response.error : "OMP 세션 전환에 실패했습니다.");
+  }
+
+  async setSubagentSubscription(level: "off" | "progress" | "events"): Promise<void> {
+    const response = await this.send({ type: "set_subagent_subscription", level });
+    if (response.success === false) throw new Error("하위 에이전트 구독 설정에 실패했습니다.");
+  }
+
+  async getSubagents(): Promise<Frame> {
+    return this.send({ type: "get_subagents" });
+  }
+
+  async getSubagentMessages(options: { subagentId?: string; sessionFile?: string; fromByte?: number } = {}): Promise<Frame> {
+    return this.send({ type: "get_subagent_messages", ...options });
+  }
+
+  async getMessagesPage(cursor?: string, limit = 100): Promise<Frame> {
+    if (!Number.isInteger(limit) || limit < 1 || limit > 256) throw new Error("메시지 페이지 크기는 1~256이어야 합니다.");
+    return this.send({ type: "get_messages_page", ...(cursor ? { cursor } : {}), limit });
+  }
+
+  async getAvailableModels(): Promise<Frame> {
+    return this.send({ type: "get_available_models" });
+  }
+
+  async setModel(provider: string, modelId: string): Promise<void> {
+    if (!provider.trim() || !modelId.trim()) throw new Error("provider와 modelId가 필요합니다.");
+    const response = await this.send({ type: "set_model", provider, modelId });
+    if (response.success === false) throw new Error(typeof response.error === "string" ? response.error : "모델 변경에 실패했습니다.");
+  }
+
+  extensionUiRequests(fromIndex = 0): { nextIndex: number; requests: readonly Frame[] } {
+    const requests = this.#events.slice(fromIndex).filter((frame) => frame.type === "extension_ui_request");
+    return { nextIndex: this.#events.length, requests };
+  }
+
+  respondExtensionUi(id: string, response: { value: string } | { confirmed: boolean } | { cancelled: true; timedOut?: boolean }): void {
+    if (!id.trim()) throw new Error("extension UI 요청 ID가 필요합니다.");
+    const handle = this.#handle;
+    if (!handle) throw new Error("OMP 세션이 시작되지 않았습니다.");
+    handle.child.stdin.write(JSON.stringify({ type: "extension_ui_response", id, ...response }) + "\n");
   }
 
   async abortTask(taskId: string, gracefulWaitMs = 1_500): Promise<AbortResult> {

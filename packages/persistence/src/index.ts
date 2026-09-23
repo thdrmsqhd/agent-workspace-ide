@@ -333,6 +333,19 @@ export class StateStore {
     return id;
   }
 
+
+  getInputRequest(inputRequestId: string): { id: string; taskId: string; status: string; payload: Record<string, unknown>; expiresAt?: string } | undefined {
+    const row = this.db.prepare("SELECT id,task_id,status,payload_json,expires_at FROM input_requests WHERE id=?").get(inputRequestId) as Row | undefined;
+    if (!row) return undefined;
+    return {
+      id: row.id as string,
+      taskId: row.task_id as string,
+      status: row.status as string,
+      payload: JSON.parse(row.payload_json as string) as Record<string, unknown>,
+      ...(typeof row.expires_at === "string" ? { expiresAt: row.expires_at } : {}),
+    };
+  }
+
   respondInputRequest(inputRequestId: string, response: Record<string, unknown>): { taskId: string; status: "answered" } {
     return this.transaction(() => {
       const row = this.db.prepare("SELECT task_id,status,expires_at FROM input_requests WHERE id=?").get(inputRequestId) as Row | undefined;

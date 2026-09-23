@@ -7,6 +7,7 @@ import type { StateStore } from "@awi/persistence";
 import { ProcessTreeSupervisor } from "@awi/processes";
 import type { AgentSettings, SettingsRegistry, TaskSettingsSnapshot } from "@awi/settings";
 import { inspectRepository, prepareWorktree } from "@awi/worktrees";
+import { applySelectedChanges, previewChanges } from "@awi/worktrees/import";
 
 export interface EngineSessionFactory {
   create(taskId: string, cwd: string, settings: TaskSettingsSnapshot, phase: "discussion" | "execution", sessionFile?: string): Promise<OmpEngineAdapter>;
@@ -64,6 +65,7 @@ export interface RuntimeOptions {
 
 export class WorkspaceRuntime {
   readonly #sessions = new Map<string, SessionRecord>();
+  readonly #engineEventCursors = new Map<string, number>();
   #activeSlots = new Set<string>();
 
   constructor(private readonly options: RuntimeOptions) {}
@@ -84,6 +86,7 @@ export class WorkspaceRuntime {
     const settings = this.options.settings.captureTask(taskId, projectId, override);
     this.options.store.saveSettingsSnapshot("task", taskId, settings);
     const adapter = await this.options.engineFactory.create(taskId, project.repoPath, settings, "discussion");
+    await adapter.setSubagentSubscription("progress");
     await adapter.prompt(prompt);
     const sessionFile = await adapter.sessionFile();
     this.#sessions.set(taskId, { adapter, sessionFile, phase:"discussion", cwd:project.repoPath });
@@ -111,6 +114,7 @@ export class WorkspaceRuntime {
       });
       await current.adapter.shutdown(taskId);
       const adapter = await this.options.engineFactory.create(taskId, journal.worktreePath, settings, "execution", current.sessionFile);
+      await adapter.setSubagentSubscription("progress");
       const relocated = await adapter.sessionFile();
       this.options.store.recordPreparedExecution(taskId, task.revision, journal.worktreePath);
       this.options.store.setTaskRunState(taskId, "running", "enabled");
@@ -159,6 +163,110 @@ export class WorkspaceRuntime {
     }
   }
 
+
+  async importExistingSession(input: {
+    projectId: string;
+    originalPrompt: string;
+    sessionPath: string;
+    baseRef?: string;
+    sourcePath?: string;
+    selectedChangeIds?: readonly string[];
+    settingsOverride?: Partial<AgentSettings>;
+  }): Promise<string> {
+    const project = this.options.store.getProjectInfo(input.projectId);
+    const taskId = this.options.store.createDiscussion(input.projectId, input.originalPrompt);
+    const settings = this.options.settings.captureTask(taskId, input.projectId, input.settingsOverride ?? {});
+    this.options.store.saveSettingsSnapshot("task", taskId, settings);
+    this.#activeSlots = acquireSlot(this.#activeSlots, taskId);
+    try {
+      const journal = await prepareWorktree({
+        repoPath: project.repoPath,
+        taskId,
+        worktreeRoot: this.options.worktreeRoot,
+        journalDirectory: this.options.journalDirectory,
+        baseRef: input.baseRef ?? project.defaultBranch,
+      });
+      if (input.sourcePath && input.selectedChangeIds?.length) {
+        const preview = await previewChanges(input.sourcePath);
+        await applySelectedChanges(preview, [...input.selectedChangeIds], journal.worktreePath);
+      }
+      const adapter = await this.options.engineFactory.create(taskId, journal.worktreePath, settings, "execution", input.sessionPath);
+      await adapter.setSubagentSubscription("progress");
+      const relocated = await adapter.sessionFile();
+      this.options.store.recordPreparedExecution(taskId, 0, journal.worktreePath);
+      this.options.store.setTaskRunState(taskId, "running", "enabled");
+      this.#sessions.set(taskId, { adapter, sessionFile: relocated, phase: "execution", cwd: journal.worktreePath });
+      this.options.store.recordImmediateMessage(taskId, "system", "기존 OMP 세션을 새 워크트리로 이전했습니다.");
+      return taskId;
+    } catch (error) {
+      this.#activeSlots = releaseSlot(this.#activeSlots, taskId);
+      throw error;
+    }
+  }
+
+  async syncEngineEvents(taskId: string): Promise<{ inputRequestIds: string[]; subagentEvents: number }> {
+    const session = this.requireSession(taskId);
+    const cursor = this.#engineEventCursors.get(taskId) ?? 0;
+    const events = session.adapter.events.slice(cursor);
+    this.#engineEventCursors.set(taskId, session.adapter.events.length);
+    const inputRequestIds: string[] = [];
+    let subagentEvents = 0;
+    for (const event of events) {
+      if (event.type === "extension_ui_request" && typeof event.id === "string") {
+        const method = typeof event.method === "string" ? event.method : "";
+        if (["select", "confirm", "input", "editor", "cancel"].includes(method)) {
+          const timeout = typeof event.timeout === "number" && event.timeout > 0 ? event.timeout : undefined;
+          const expiresAt = timeout ? new Date(Date.now() + timeout).toISOString() : undefined;
+          const inputRequestId = this.options.store.createInputRequest(taskId, {
+            engineRequestId: event.id,
+            method,
+            title: typeof event.title === "string" ? event.title : "",
+            message: typeof event.message === "string" ? event.message : "",
+            options: Array.isArray(event.options) ? event.options : [],
+          }, expiresAt);
+          inputRequestIds.push(inputRequestId);
+        }
+      } else if (typeof event.type === "string" && event.type.startsWith("subagent_")) {
+        subagentEvents++;
+      }
+    }
+    return { inputRequestIds, subagentEvents };
+  }
+
+  async respondInput(inputRequestId: string, response: { value: string } | { confirmed: boolean } | { cancelled: true; timedOut?: boolean }): Promise<void> {
+    const request = this.options.store.getInputRequest(inputRequestId);
+    if (!request) throw new Error("입력 요청이 없습니다.");
+    if (request.status !== "pending") throw new Error("E_INPUT_CLOSED: 이미 처리된 입력 요청입니다.");
+    if (request.expiresAt && Date.parse(request.expiresAt) <= Date.now()) {
+      this.options.store.respondInputRequest(inputRequestId, response as Record<string, unknown>);
+      return;
+    }
+    const engineRequestId = request.payload.engineRequestId;
+    if (typeof engineRequestId !== "string") throw new Error("엔진 입력 요청 ID가 없습니다.");
+    const session = this.requireSession(request.taskId);
+    session.adapter.respondExtensionUi(engineRequestId, response);
+    this.options.store.respondInputRequest(inputRequestId, response as Record<string, unknown>);
+  }
+
+  async subagents(taskId: string): Promise<unknown> {
+    const response = await this.requireSession(taskId).adapter.getSubagents();
+    return response.data;
+  }
+
+  async subagentMessages(taskId: string, options: { subagentId?: string; sessionFile?: string; fromByte?: number } = {}): Promise<unknown> {
+    const response = await this.requireSession(taskId).adapter.getSubagentMessages(options);
+    return response.data;
+  }
+
+  async changeModel(taskId: string, provider: string, modelId: string): Promise<void> {
+    await this.requireSession(taskId).adapter.setModel(provider, modelId);
+  }
+
+  async historyPage(taskId: string, cursor?: string, limit?: number): Promise<unknown> {
+    const response = await this.requireSession(taskId).adapter.getMessagesPage(cursor, limit);
+    return response.data;
+  }
+
   async abortTask(taskId: string): Promise<void> {
     this.options.store.applyQueueCommand({
       apiVersion:1, requestId:randomUUID(), method:"task.abort", taskId,
@@ -179,6 +287,7 @@ export class WorkspaceRuntime {
     const alive = this.options.supervisor.list(taskId).some((item) => item.role === "engine" && item.state === "running");
     if (!alive) {
       const adapter = await this.options.engineFactory.create(taskId, session.cwd, settings, session.phase, session.sessionFile);
+      await adapter.setSubagentSubscription("progress");
       session = { ...session, adapter };
       this.#sessions.set(taskId, session);
     }
