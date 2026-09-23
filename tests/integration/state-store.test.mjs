@@ -9,10 +9,12 @@ import { StateStore } from "@awi/persistence";
 
 async function fixture(t) {
   const directory = await mkdtemp(join(tmpdir(), "awi-state-"));
-  t.after(() => rm(directory, { recursive: true, force: true }));
   const file = join(directory, "state.sqlite");
   const store = await StateStore.open(file);
-  t.after(() => store.close());
+  t.after(async () => {
+    store.close();
+    await rm(directory, { recursive: true, force: true });
+  });
   const project = store.createProject("앱", directory, "repo-key", "main");
   const taskId = store.createDiscussion(project, "원래 요청 전문");
   store.recordPreparedExecution(taskId, 0, join(directory, "worktree"));
