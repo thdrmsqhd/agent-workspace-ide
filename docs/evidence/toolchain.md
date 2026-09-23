@@ -10,7 +10,7 @@
 | ESLint | 9.39.1 | 기초 정적 검사 개발 의존성 |
 | Git | 2.52.0.windows.1 | 검증 PC에서 확인 |
 | SQLite | Node 24 내장 `node:sqlite` | Node API는 릴리스 후보 단계. 파일 DB 검사 완료, 최종 IDE 호스트에서 호환 확인 필요 |
-| Theia IDE/확장 | 미선택 | TV-001/002, IMP-02에서 검증 후 고정 |
+| Theia IDE/확장 | 1.75.0 (VS Code API 지원 1.134.0) | 검증 호스트 `apps/ide-verification-host` 구성·실행 확인. 언어·디버깅 기능과 버전 고정은 TV-001/002 진행 후 |
 | OMP 런타임·RPC | `omp` 18.2.5 | TV-003 통과, TV-004 실패(자손 중단), TV-006 통과(닫힌 구성). [증거](TV-003/README.md)에 버전 해시 기록 |
 | Windows 11 x64 | 기초 CI 통과 + OMP RPC 실측 | 실제 디버거·PTY·확장 수용 검증 필요 |
 
