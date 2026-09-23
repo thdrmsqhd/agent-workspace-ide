@@ -9,6 +9,7 @@
 | TypeScript | 5.9.3 | 계약 패키지 개발 의존성 |
 | ESLint | 9.39.1 | 기초 정적 검사 개발 의존성 |
 | Git | 2.51.1 | 현재 Linux 환경에서 확인 |
+| SQLite | Node 24 내장 `node:sqlite` | Node API는 릴리스 후보 단계. 파일 DB 검사 완료, 최종 IDE 호스트에서 호환 확인 필요 |
 | Theia IDE/확장 | 미선택 | TV-001/002, IMP-02에서 검증 후 고정 |
 | OMP 런타임·RPC | 미선택 | TV-003/004/006, IMP-03에서 검증 후 고정 |
 | Windows 11 x64 | 기초 CI만 통과 | 실제 디버거·PTY·확장 수용 검증 필요 |
@@ -24,3 +25,7 @@
 ## 독립 규칙 구현 결과
 
 2026-09-23 클린 설치 후 Linux에서 `npm run docs:check`, `npm run lint`, `npm run typecheck`, `npm run test:unit`을 실행하여 모두 통과했다. 단위 검사 6건은 CMD-06~10 입력, 대기열 수정·삭제 경쟁, Esc 중단과 대기열 정지, 불명 결과 재전송 방지, 12개 실행 슬롯을 다룬다. [새 코어 포함 GitHub Actions](https://github.com/thdrmsqhd/agent-workspace-ide/actions/runs/35815021871)에서도 Ubuntu·Windows 작업이 모두 통과했다. 이 검사는 순수 함수의 동작만 확인하며 DB 트랜잭션·실제 에이전트/IDE·동시 12개 프로세스 검증은 아니다.
+
+## 첫 SQLite 저장 계층
+
+2026-09-23 임시 파일 DB에서 메시지+operation+이벤트의 원자적 저장·재시작 복원, 기록 실패 시 롤백, FK, 전달 중 재시작 때 `unknown` 격리, 기존 미지원 스키마 보존, WAL 온라인 백업을 통합 검사했다. `node:sqlite` API는 현재 Node 24 문서에서 [릴리스 후보](https://nodejs.org/download/release/latest-v24.x/docs/api/sqlite.html)로 분류된다. 최종 IDE 호스트의 런타임과 Windows 파일 잠금, 디스크 부족, crash 직후 WAL 복구, 실제 에이전트 전달은 아직 확인하지 않았다. 코드와 테스트는 `packages/persistence`, `tests/integration`에 있다.

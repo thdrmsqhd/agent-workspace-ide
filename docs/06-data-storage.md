@@ -74,3 +74,9 @@ tasks의 상태 enum은 05가 권위자이며 agent_sessions.status는 idle|runn
 original_prompt는 TEXT NOT NULL, worktree_path/base_commit은 discussion에서 NULL 가능, messages.content는 빈 문자열 가능하나 전송 시 text 또는 첨부가 있어야 한다. source 파일 경로는 NULL 가능하고 선택 코드에는 content artifact가 있어야 한다.
 
 SQL migration은 CHECK·NOT NULL·FK·부분 unique index로 표현 가능한 제약을 반드시 반영한다. enum을 추가할 때 과거 읽기 호환과 schema version을 올린다. integration의 특정 행위 순서·역할별 cwd 같은 도메인 제약은 서비스와 통합 시험에서도 검사한다.
+
+## 8. 구현 현황
+
+`packages/persistence`의 첫 마이그레이션은 projects/tasks/messages/operations/events/schema_migrations에 한정한다. foreign_keys·WAL·busy_timeout, 원자적 큐 상태 저장, requestId 중복 판별, 전달 선점, 재시작 시 불명 결과 격리, SQLite 온라인 백업을 구현했다. 미지원 기존 스키마는 덮지 않고 오류로 중단한다. 새 마이그레이션을 추가할 때는 기존 스키마의 온라인 백업을 **적용 전에** 생성해야 한다.
+
+agent_sessions, drafts, artifacts, attachments, processes, port_leases, input_requests, operation_steps, integrations, snapshots, editor_buffers, view_states 및 파일 원자 쓰기·마이그레이션 업그레이드 경로는 미구현이다. 경로·Git 소유권 검증은 등록 서비스가 아직 없으므로 `createProject`와 `recordPreparedExecution`의 호출자가 확인해야 한다. 현재 검사 결과는 [도구·검증 기록](evidence/toolchain.md)에 적는다.

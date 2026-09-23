@@ -1,6 +1,6 @@
 # 18. 개발·빌드·배포 가이드
 
-2026-09-23 / 구현할 저장소 계약. 문서 검사, 공통 계약·순수 큐 규칙의 lint/typecheck/build/test:unit을 추가했다. 앱 실행과 실제 연동·검증 명령은 아직 없다. [실측 도구 버전과 검증 범위](evidence/toolchain.md)를 확인한다.
+2026-09-23 / 구현할 저장소 계약. 문서 검사, 공통 계약·순수 큐·첫 SQLite 저장 계층의 lint/typecheck/build/test:unit/test:integration을 추가했다. 앱 실행과 실제 연동·검증 명령은 아직 없다. [실측 도구 버전과 검증 범위](evidence/toolchain.md)를 확인한다.
 
 ## 1. 환경과 버전 확정
 
@@ -22,12 +22,12 @@ apps/desktop과 packages/{contracts,core,engine-omp,worktrees,processes,persiste
 | --- | --- |
 | npm ci | 구현: lockfile 그대로 설치 |
 | npm run dev | 앱 미구현으로 명시적 실패. 향후 개발 데스크톱 실행, 명시한 테스트 데이터 루트 사용 |
-| npm run build | 구현: 계약·순수 코어 패키지만 빌드. 향후 앱 빌드 포함 |
+| npm run build | 구현: 계약·순수 코어·첫 SQLite 저장 계층 빌드. 향후 앱 빌드 포함 |
 | npm run lint | 구현: 현존 JS/TS 정적 규칙. 향후 앱 포함 |
-| npm run typecheck | 구현: 계약 컴파일 후 코어 타입 검사. 향후 모든 패키지 포함 |
+| npm run typecheck | 구현: 계약·코어 컴파일 후 저장 계층 타입 검사. 향후 모든 패키지 포함 |
 | npm run docs:check | 구현: 상대 문서 링크·정의 ID·요구사항-수용 연결·표 구조·일본어 가나 검사. enum·모든 문장 내 참조 검증은 향후 확장 |
 | npm run test:unit | 구현: 계약의 큐 명령과 순수 대기열·Esc·12슬롯 검사. 향후 전체 상태·정책 로직 포함 |
-| npm run test:integration | 미구현: 임시 Git/DB/엔진 모의 경계 |
+| npm run test:integration | 구현: 임시 파일 SQLite의 원자성·재시작·백업·FK. 향후 Git/엔진 경계 포함 |
 | npm run test:windows | 미구현: 실제 PTY·IDE·debug 시나리오 |
 | npm run test:acceptance | 미구현: AT 시나리오 결과 생성 |
 | npm run perf:collect | 미구현: PERF 측정·원시 결과 저장 |
@@ -43,7 +43,7 @@ TypeScript strict, 경계 입력 스키마 검증, public contract는 packages/c
 
 ## 5. CI 계획
 
-현재 기초 CI: Ubuntu/Windows에서 npm ci → docs:check → lint → typecheck → 계약·순수 코어 build → unit. 코어 포함 CI가 두 운영체제에서 통과했다([실행 증거](evidence/toolchain.md)). 최종 PR CI: docs:check → lint/typecheck → unit → integration → build. Windows 영향 변경은 Windows runner에서 추가 실행한다. 실제 모델·비용이 있는 시험은 승인된 별도 job으로 분리하고 모의 시험과 구분한다.
+현재 기초 CI: Ubuntu/Windows에서 npm ci → docs:check → lint → typecheck → 계약·순수 코어·SQLite build → unit → SQLite integration. 현재 저장 계층의 CI 실행 결과는 [증거](evidence/toolchain.md)에 기록한다. 최종 PR CI: docs:check → lint/typecheck → unit → integration → build. Windows 영향 변경은 Windows runner에서 추가 실행한다. 실제 모델·비용이 있는 시험은 승인된 별도 job으로 분리하고 모의 시험과 구분한다.
 
 main에 푸시했다고 자동 공개 릴리스하지 않는다. 첫 버전 릴리스는 명시적 태그/수동 workflow로 시작한다. 현재 기초 CI 외 제품 검증·패키징 자동화는 설치하지 않았다.
 

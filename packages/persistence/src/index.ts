@@ -1,0 +1,277 @@
+import { createHash, randomUUID } from "node:crypto";
+import { mkdir, stat } from "node:fs/promises";
+import { dirname, join } from "node:path";
+import { backup, DatabaseSync } from "node:sqlite";
+import { parseQueueCommand, type QueueCommand } from "@awi/contracts";
+import {
+  abort, claimNext, confirmStopped, deleteQueued, enqueue, markUnknown,
+  resume, updateQueued, type QueuedMessage, type TaskQueue,
+} from "@awi/core";
+import { initialSchema } from "./schema.js";
+
+type Row = Record<string, unknown>;
+type StoredResult = { operationId: string; task: TaskQueue; messageId?: string };
+
+function digest(input: string): string {
+  return createHash("sha256").update(input).digest("hex");
+}
+
+function stable(value: unknown): string {
+  if (Array.isArray(value)) return `[${value.map(stable).join(",")}]`;
+  if (value !== null && typeof value === "object") {
+    return `{${Object.keys(value).sort().map((key) => `${JSON.stringify(key)}:${stable((value as Row)[key])}`).join(",")}}`;
+  }
+  return JSON.stringify(value);
+}
+
+function requireRow(row: Row | undefined, kind: string): Row {
+  if (!row) throw new Error(`${kind} 항목을 찾지 못했습니다.`);
+  return row;
+}
+
+/** 동기 SQLite API는 단일 백엔드 연결에서만 사용한다. UI 스레드에서 직접 호출하지 않는다. */
+export class StateStore {
+  private constructor(private readonly db: DatabaseSync, private readonly filename: string) {}
+
+  static async open(filename: string): Promise<StateStore> {
+    await mkdir(dirname(filename), { recursive: true });
+    const existed = await stat(filename).then(() => true, () => false);
+    const db = new DatabaseSync(filename, { timeout: 5000 });
+    const store = new StateStore(db, filename);
+    try {
+      db.exec("PRAGMA foreign_keys = ON; PRAGMA busy_timeout = 5000; PRAGMA journal_mode = WAL;");
+      if ((db.prepare("PRAGMA integrity_check").get() as { integrity_check: string }).integrity_check !== "ok") {
+        throw new Error("DB 무결성 검사에 실패했습니다. 원본 DB를 보존하고 복구해야 합니다.");
+      }
+      await store.migrate(existed);
+      store.recoverInterrupted();
+      return store;
+    } catch (error) {
+      db.close();
+      throw error;
+    }
+  }
+
+  private async migrate(existed: boolean): Promise<void> {
+    const migrationTable = this.db.prepare("SELECT name FROM sqlite_master WHERE type='table' AND name='schema_migrations'").get();
+    const otherTables = this.db.prepare("SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%' AND name <> 'schema_migrations'").all();
+    if (!migrationTable && otherTables.length) throw new Error("알 수 없는 기존 DB 스키마입니다. 원본을 보존하고 수동으로 확인해 주세요.");
+    const checksum = digest(initialSchema);
+    if (migrationTable) {
+      const rows = this.db.prepare("SELECT id, checksum FROM schema_migrations ORDER BY id").all() as { id: number; checksum: string }[];
+      if (rows.length !== 1 || rows[0]?.id !== 1 || rows[0]?.checksum !== checksum) {
+        throw new Error("지원하지 않거나 변경된 DB 마이그레이션입니다. 원본 DB를 보존했습니다.");
+      }
+      return;
+    }
+    if (existed && otherTables.length) await this.backupSnapshot();
+    this.db.exec("BEGIN IMMEDIATE");
+    try {
+      this.db.exec(initialSchema);
+      this.db.prepare("INSERT INTO schema_migrations(id,checksum,applied_at) VALUES(1,?,?)").run(checksum, new Date().toISOString());
+      this.db.exec("COMMIT");
+    } catch (error) {
+      this.db.exec("ROLLBACK");
+      throw error;
+    }
+  }
+
+  /** WAL이 있는 DB를 파일 하나만 복사하지 않고 온라인 백업한다. */
+  async backupSnapshot(): Promise<string> {
+    const target = join(dirname(this.filename), `state-backup-${Date.now()}-${randomUUID()}.sqlite`);
+    await backup(this.db, target);
+    return target;
+  }
+
+  private transaction<T>(action: () => T): T {
+    this.db.exec("BEGIN IMMEDIATE");
+    try {
+      const result = action();
+      this.db.exec("COMMIT");
+      return result;
+    } catch (error) {
+      this.db.exec("ROLLBACK");
+      throw error;
+    }
+  }
+
+  /** 경로·저장소 동일성 검증은 등록 서비스의 책임이다. */
+  createProject(name: string, repoPath: string, repoKey: string, defaultBranch: string): string {
+    const id = randomUUID();
+    this.db.prepare("INSERT INTO projects(id,name,repo_path,repo_key,default_branch,created_at) VALUES(?,?,?,?,?,?)")
+      .run(id, name, repoPath, repoKey, defaultBranch, new Date().toISOString());
+    return id;
+  }
+
+  createDiscussion(projectId: string, originalPrompt: string): string {
+    if (!originalPrompt.trim()) throw new Error("원래 요청이 비어 있습니다.");
+    return this.transaction(() => {
+      const id = randomUUID();
+      const now = new Date().toISOString();
+      this.db.prepare("INSERT INTO tasks(id,project_id,original_prompt,phase,run_state,created_at,updated_at) VALUES(?,?,?,'discussion','idle',?,?)")
+        .run(id, projectId, originalPrompt, now, now);
+      this.appendEvent(id, "task.changed", { taskId: id, revision: 0 });
+      return id;
+    });
+  }
+
+  /** 외부의 워크트리 준비가 성공한 뒤에만 호출한다. 이 메서드는 워크트리를 만들지 않는다. */
+  recordPreparedExecution(taskId: string, expectedRevision: number, worktreePath: string): TaskQueue {
+    if (!worktreePath.trim()) throw new Error("준비된 워크트리 경로가 필요합니다.");
+    return this.transaction(() => {
+      const task = this.getTaskQueue(taskId);
+      if (task.phase !== "discussion" || task.revision !== expectedRevision) throw new Error("작업 시작 상태 또는 revision이 맞지 않습니다.");
+      const result = this.db.prepare("UPDATE tasks SET phase='execution', worktree_path=?, revision=revision+1, updated_at=? WHERE id=? AND phase='discussion' AND revision=?")
+        .run(worktreePath, new Date().toISOString(), taskId, expectedRevision);
+      if (result.changes !== 1) throw new Error("작업 준비 결과를 저장할 수 없습니다.");
+      this.appendEvent(taskId, "task.changed", { taskId, revision: task.revision + 1 });
+      return this.getTaskQueue(taskId);
+    });
+  }
+
+  getTaskQueue(taskId: string): TaskQueue {
+    const row = requireRow(this.db.prepare("SELECT id,phase,run_state,integration_state,queue_mode,revision FROM tasks WHERE id=?").get(taskId) as Row | undefined, "작업");
+    const messages = this.db.prepare("SELECT id,content,attachment_ids_json,revision,queue_state FROM messages WHERE task_id=? AND delivery_mode='queued' ORDER BY queue_position").all(taskId) as Row[];
+    return {
+      taskId: row.id as string, phase: row.phase as TaskQueue["phase"], runState: row.run_state as TaskQueue["runState"],
+      integrationState: row.integration_state as TaskQueue["integrationState"],
+      queueMode: row.queue_mode as TaskQueue["queueMode"], revision: row.revision as number,
+      messages: messages.map((item) => ({
+        id: item.id as string, text: item.content as string, attachmentIds: JSON.parse(item.attachment_ids_json as string) as string[],
+        revision: item.revision as number, state: item.queue_state as QueuedMessage["state"],
+      })),
+    };
+  }
+
+  /** requestId 재사용을 payload 해시로 판별하며 상태·메시지·이벤트·operation을 원자적으로 저장한다. */
+  applyQueueCommand(input: unknown): StoredResult {
+    const command = parseQueueCommand(input);
+    const hash = digest(stable(command));
+    return this.transaction(() => {
+      const existing = this.db.prepare("SELECT payload_hash,state,result_json FROM operations WHERE request_id=?").get(command.requestId) as Row | undefined;
+      if (existing) {
+        if (existing.payload_hash !== hash) throw new Error("E_REQUEST_REUSE: 같은 requestId에 다른 명령을 사용할 수 없습니다.");
+        if (existing.state !== "succeeded" || !existing.result_json) throw new Error("E_UNKNOWN_OUTCOME: 기존 명령의 결과를 확인해야 합니다.");
+        return JSON.parse(existing.result_json as string) as StoredResult;
+      }
+      const before = this.getTaskQueue(command.taskId);
+      const next = this.applyMutation(before, command);
+      this.saveMutation(before, next.task);
+      const operationId = randomUUID();
+      const result: StoredResult = { operationId, task: next.task, ...(next.messageId ? { messageId: next.messageId } : {}) };
+      this.db.prepare("INSERT INTO operations(id,request_id,scope_key,method,payload_hash,state,result_json,created_at) VALUES(?,?,?,?,?,'succeeded',?,?)")
+        .run(operationId, command.requestId, command.taskId, command.method, hash, JSON.stringify(result), new Date().toISOString());
+      this.appendEvent(command.taskId, "queue.changed", { taskId: command.taskId, revision: next.task.revision });
+      return result;
+    });
+  }
+
+  private applyMutation(before: TaskQueue, command: QueueCommand): { task: TaskQueue; messageId?: string } {
+    switch (command.method) {
+      case "task.send": {
+        if (command.payload.delivery !== "queued") throw new Error("즉시 전달은 엔진 연결 후 구현합니다.");
+        const id = randomUUID();
+        return { task: enqueue(before, command.expectedRevision, { id, text: command.payload.text, attachmentIds: command.payload.attachmentIds }), messageId: id };
+      }
+      case "queue.update":
+        return { task: updateQueued(before, command.payload.messageId, command.expectedRevision, command.payload.text, command.payload.attachmentIds) };
+      case "queue.delete":
+        return { task: deleteQueued(before, command.payload.messageId, command.expectedRevision) };
+      case "task.abort":
+        return { task: abort(before) };
+      case "task.resume":
+        if (command.payload.text || command.payload.attachmentIds?.length) throw new Error("재개 지시 전달은 엔진 연결 후 구현합니다.");
+        return { task: resume(before, command.expectedRevision) };
+    }
+  }
+
+  /** 변경 행 수를 확인해 다른 스냅샷이나 잘못된 상태를 저장하지 않는다. */
+  private saveMutation(before: TaskQueue, after: TaskQueue): void {
+    if (after.revision !== before.revision) {
+      const result = this.db.prepare("UPDATE tasks SET run_state=?,queue_mode=?,revision=?,updated_at=? WHERE id=? AND revision=?")
+        .run(after.runState, after.queueMode, after.revision, new Date().toISOString(), before.taskId, before.revision);
+      if (result.changes !== 1) throw new Error("E_REVISION_CONFLICT: 작업 상태가 변경되었습니다.");
+    }
+    for (const item of after.messages) {
+      const previous = before.messages.find((message) => message.id === item.id);
+      if (!previous) {
+        const position = this.db.prepare("SELECT COALESCE(MAX(queue_position),-1)+1 AS position FROM messages WHERE task_id=?").get(before.taskId) as { position: number };
+        const now = new Date().toISOString();
+        this.db.prepare("INSERT INTO messages(id,task_id,content,attachment_ids_json,delivery_mode,queue_state,queue_position,revision,created_at,updated_at) VALUES(?,?,?,?,'queued',?,?,0,?,?)")
+          .run(item.id, before.taskId, item.text, JSON.stringify(item.attachmentIds), item.state, position.position, now, now);
+      } else if (previous.revision !== item.revision) {
+        const changed = this.db.prepare("UPDATE messages SET content=?,attachment_ids_json=?,queue_state=?,revision=?,updated_at=? WHERE id=? AND revision=? AND queue_state=?")
+          .run(item.text, JSON.stringify(item.attachmentIds), item.state, item.revision, new Date().toISOString(), item.id, previous.revision, previous.state);
+        if (changed.changes !== 1) throw new Error("E_REVISION_CONFLICT: 대기 지시가 변경되었습니다.");
+      }
+    }
+  }
+
+  /** 선점을 커밋한 뒤에만 호출자가 엔진에 전달해야 한다. */
+  claimNextMessage(taskId: string): QueuedMessage | undefined {
+    return this.transaction(() => {
+      const before = this.getTaskQueue(taskId);
+      const claimed = claimNext(before);
+      if (!claimed.message) return undefined;
+      this.saveMutation(before, claimed.task);
+      const id = randomUUID();
+      this.db.prepare("INSERT INTO operations(id,request_id,scope_key,method,payload_hash,state,created_at) VALUES(?,?,?,?,?,'accepted',?)")
+        .run(id, id, taskId, "queue.dispatch", digest(claimed.message.id), new Date().toISOString());
+      this.appendEvent(taskId, "queue.changed", { taskId, revision: claimed.task.revision });
+      return claimed.message;
+    });
+  }
+
+  markDispatchUncertain(taskId: string, messageId: string): TaskQueue {
+    return this.transaction(() => {
+      const before = this.getTaskQueue(taskId);
+      const after = markUnknown(before, messageId);
+      this.saveMutation(before, after);
+      this.db.prepare("UPDATE operations SET state='unknown' WHERE scope_key=? AND method='queue.dispatch' AND payload_hash=? AND state='accepted'")
+        .run(taskId, digest(messageId));
+      this.appendEvent(taskId, "queue.changed", { taskId, revision: after.revision });
+      return after;
+    });
+  }
+
+  confirmAbort(taskId: string): TaskQueue {
+    return this.transaction(() => {
+      const before = this.getTaskQueue(taskId);
+      const after = confirmStopped(before);
+      this.saveMutation(before, after);
+      this.appendEvent(taskId, "task.changed", { taskId, revision: after.revision });
+      return after;
+    });
+  }
+
+  /** 재시작 시 실행을 재생하지 않고 미확인 전달과 부작용을 명시적으로 격리한다. */
+  private recoverInterrupted(): void {
+    this.transaction(() => {
+      const candidates = this.db.prepare("SELECT id FROM tasks WHERE run_state IN ('running','waiting_input','reconnecting','stopping') OR integration_state IN ('merging','pushing','pr_pending') OR id IN (SELECT task_id FROM messages WHERE queue_state IN ('dispatching','accepted'))").all() as { id: string }[];
+      for (const { id } of candidates) {
+        const before = this.getTaskQueue(id);
+        const uncertain = before.messages.some((message) => message.state === "dispatching" || message.state === "accepted");
+        this.db.prepare("UPDATE messages SET queue_state='unknown',revision=revision+1,updated_at=? WHERE task_id=? AND queue_state IN ('dispatching','accepted')")
+          .run(new Date().toISOString(), id);
+        const integration = ["merging", "pushing", "pr_pending"].includes(before.integrationState) ? "unknown" : before.integrationState;
+        this.db.prepare("UPDATE tasks SET run_state='paused',queue_mode='paused',integration_state=?,revision=revision+1,updated_at=? WHERE id=?")
+          .run(integration, new Date().toISOString(), id);
+        this.appendEvent(id, "task.changed", { taskId: id, revision: before.revision + 1, recovery: uncertain ? "unknown" : "paused" });
+      }
+      this.db.prepare("UPDATE operations SET state='unknown' WHERE state IN ('accepted','running')").run();
+    });
+  }
+
+  private appendEvent(taskId: string, type: string, payload: object): void {
+    this.db.prepare("INSERT INTO events(id,task_id,event_type,payload_json,created_at) VALUES(?,?,?,?,?)")
+      .run(randomUUID(), taskId, type, JSON.stringify(payload), new Date().toISOString());
+  }
+
+  eventCount(): number {
+    return (this.db.prepare("SELECT COUNT(*) AS total FROM events").get() as { total: number }).total;
+  }
+
+  close(): void {
+    this.db.close();
+  }
+}
