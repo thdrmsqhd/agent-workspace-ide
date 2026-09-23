@@ -57,4 +57,13 @@ export class SettingsRegistry {
     const value = this.#tasks.get(taskId);
     return value ? { ...value } : undefined;
   }
+
+  restoreProject(projectId: string, settings: AgentSettings, revision: number): void {
+    if (revision < 0 || !Number.isInteger(revision)) throw new Error("프로젝트 설정 revision이 올바르지 않습니다.");
+    this.#projects.set(projectId, { settings: { ...settings }, revision });
+  }
+
+  restoreTask(snapshot: TaskSettingsSnapshot): void {
+    this.#tasks.set(snapshot.taskId, { ...snapshot });
+  }
 }

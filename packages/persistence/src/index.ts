@@ -419,6 +419,18 @@ export class StateStore {
     `).run(value.id, taskId, value.role, value.pid, value.startToken, value.state, JSON.stringify(value.metadata ?? {}), new Date().toISOString());
   }
 
+
+  latestArtifact(taskId: string, kind: string): { id: string; location: string; metadata: Record<string, unknown>; createdAt: string } | undefined {
+    const row = this.db.prepare("SELECT id,location,metadata_json,created_at FROM artifacts WHERE task_id=? AND kind=? ORDER BY created_at DESC LIMIT 1")
+      .get(taskId, kind) as Row | undefined;
+    return row ? {
+      id: row.id as string,
+      location: row.location as string,
+      metadata: JSON.parse(row.metadata_json as string) as Record<string, unknown>,
+      createdAt: row.created_at as string,
+    } : undefined;
+  }
+
   saveArtifact(taskId: string, kind: string, location: string, metadata: Record<string, unknown> = {}): string {
     const id = randomUUID();
     this.db.prepare("INSERT INTO artifacts(id,task_id,kind,location,metadata_json,created_at) VALUES(?,?,?,?,?,?)")

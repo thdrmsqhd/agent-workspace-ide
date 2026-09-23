@@ -1,4 +1,5 @@
 import { randomUUID } from "node:crypto";
+import { createCodeSelectionAttachment, createPathAttachment, type AttachmentItem } from "@awi/attachments";
 import { mkdir, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 import { acquireSlot, releaseSlot } from "@awi/core";
@@ -70,10 +71,42 @@ export class WorkspaceRuntime {
 
   constructor(private readonly options: RuntimeOptions) {}
 
+  private settingsForTask(taskId: string): TaskSettingsSnapshot {
+    const existing = this.options.settings.taskSnapshot(taskId);
+    if (existing) return existing;
+    const saved = this.options.store.getSettingsSnapshot("task", taskId);
+    if (!saved) throw new Error("작업 설정 스냅샷이 없습니다.");
+    const raw = saved.settings;
+    if (typeof raw.projectId !== "string" || typeof raw.engine !== "string" || typeof raw.model !== "string" ||
+        (raw.mode !== "manual" && raw.mode !== "automatic") || typeof raw.capturedAt !== "string" || typeof raw.sourceRevision !== "number") {
+      throw new Error("저장된 작업 설정 스냅샷이 손상되었습니다.");
+    }
+    const snapshot: TaskSettingsSnapshot = {
+      taskId,
+      projectId: raw.projectId,
+      engine: raw.engine,
+      model: raw.model,
+      mode: raw.mode,
+      capturedAt: raw.capturedAt,
+      sourceRevision: raw.sourceRevision,
+    };
+    this.options.settings.restoreTask(snapshot);
+    return snapshot;
+  }
+
   async registerProject(name: string, repoPath: string, defaultBranch: string, defaults: AgentSettings): Promise<string> {
     const repo = await inspectRepository(repoPath);
     const existing = this.options.store.findProjectByRepoKey(repo.repoKey);
-    if (existing) return existing.id;
+    if (existing) {
+      const saved = this.options.store.getSettingsSnapshot("project", existing.id);
+      if (saved) {
+        const raw = saved.settings;
+        if (typeof raw.engine === "string" && typeof raw.model === "string" && (raw.mode === "manual" || raw.mode === "automatic")) {
+          this.options.settings.restoreProject(existing.id, { engine: raw.engine, model: raw.model, mode: raw.mode }, saved.revision);
+        }
+      }
+      return existing.id;
+    }
     const id = this.options.store.createProject(name, repo.repoPath, repo.repoKey, defaultBranch);
     this.options.settings.setProjectDefault(id, defaults);
     this.options.store.saveSettingsSnapshot("project", id, defaults);
@@ -90,6 +123,7 @@ export class WorkspaceRuntime {
     await adapter.prompt(prompt);
     const sessionFile = await adapter.sessionFile();
     this.#sessions.set(taskId, { adapter, sessionFile, phase:"discussion", cwd:project.repoPath });
+    this.options.store.saveArtifact(taskId, "omp-session", sessionFile, { phase: "discussion", cwd: project.repoPath });
     this.options.store.recordImmediateMessage(taskId, "user", prompt);
     return taskId;
   }
@@ -98,8 +132,7 @@ export class WorkspaceRuntime {
     const task = this.options.store.getTaskInfo(taskId);
     if (task.phase !== "discussion") throw new Error("논의 상태의 작업만 시작할 수 있습니다.");
     const project = this.options.store.getProjectInfo(task.projectId);
-    const settings = this.options.settings.taskSnapshot(taskId);
-    if (!settings) throw new Error("작업 설정 스냅샷이 없습니다.");
+    const settings = this.settingsForTask(taskId);
     const current = this.#sessions.get(taskId);
     if (!current) throw new Error("논의 세션이 없습니다.");
 
@@ -119,6 +152,7 @@ export class WorkspaceRuntime {
       this.options.store.recordPreparedExecution(taskId, task.revision, journal.worktreePath);
       this.options.store.setTaskRunState(taskId, "running", "enabled");
       this.#sessions.set(taskId, { adapter, sessionFile:relocated, phase:"execution", cwd:journal.worktreePath });
+      this.options.store.saveArtifact(taskId, "omp-session", relocated, { phase: "execution", cwd: journal.worktreePath });
       await adapter.prompt("논의에서 확정한 요구사항을 바탕으로 현재 워크트리에서 작업을 시작하라.");
     } catch (error) {
       this.#activeSlots = releaseSlot(this.#activeSlots, taskId);
@@ -164,6 +198,60 @@ export class WorkspaceRuntime {
   }
 
 
+
+  updateProjectSettings(projectId: string, value: AgentSettings, expectedRevision: number): number {
+    const revision = this.options.settings.setProjectDefault(projectId, value, expectedRevision);
+    this.options.store.saveSettingsSnapshot("project", projectId, value, expectedRevision);
+    return revision;
+  }
+
+  updateQueued(taskId: string, messageId: string, expectedMessageRevision: number, text: string, attachmentIds: readonly string[] = []): void {
+    this.options.store.applyQueueCommand({
+      apiVersion: 1,
+      requestId: randomUUID(),
+      method: "queue.update",
+      taskId,
+      expectedRevision: expectedMessageRevision,
+      payload: { messageId, text, attachmentIds: [...attachmentIds] },
+    });
+  }
+
+  deleteQueued(taskId: string, messageId: string, expectedMessageRevision: number): void {
+    this.options.store.applyQueueCommand({
+      apiVersion: 1,
+      requestId: randomUUID(),
+      method: "queue.delete",
+      taskId,
+      expectedRevision: expectedMessageRevision,
+      payload: { messageId },
+    });
+  }
+
+  async attachPath(taskId: string, kind: "file" | "folder" | "image", relativePath: string): Promise<AttachmentItem> {
+    const task = this.options.store.getTaskInfo(taskId);
+    const project = this.options.store.getProjectInfo(task.projectId);
+    const root = task.worktreePath ?? project.repoPath;
+    const attachment = await createPathAttachment(root, relativePath, kind);
+    this.options.store.saveAttachment(taskId, {
+      id: attachment.id,
+      kind: attachment.kind,
+      relativePath: attachment.relativePath,
+      metadata: { size: attachment.size, sha256: attachment.sha256 ?? null, children: attachment.children ?? [] },
+    });
+    return attachment;
+  }
+
+  attachCodeSelection(taskId: string, relativePath: string, startLine: number, endLine: number, content: string): AttachmentItem {
+    const attachment = createCodeSelectionAttachment(relativePath, startLine, endLine, content);
+    this.options.store.saveAttachment(taskId, {
+      id: attachment.id,
+      kind: attachment.kind,
+      relativePath: attachment.relativePath,
+      metadata: { size: attachment.size, code: attachment.code ?? null },
+    });
+    return attachment;
+  }
+
   async importExistingSession(input: {
     projectId: string;
     originalPrompt: string;
@@ -196,6 +284,7 @@ export class WorkspaceRuntime {
       this.options.store.recordPreparedExecution(taskId, 0, journal.worktreePath);
       this.options.store.setTaskRunState(taskId, "running", "enabled");
       this.#sessions.set(taskId, { adapter, sessionFile: relocated, phase: "execution", cwd: journal.worktreePath });
+      this.options.store.saveArtifact(taskId, "omp-session", relocated, { phase: "execution", cwd: journal.worktreePath });
       this.options.store.recordImmediateMessage(taskId, "system", "기존 OMP 세션을 새 워크트리로 이전했습니다.");
       return taskId;
     } catch (error) {
@@ -280,9 +369,22 @@ export class WorkspaceRuntime {
 
   async resumeTask(taskId: string, text?: string): Promise<void> {
     let session = this.#sessions.get(taskId);
-    if (!session) throw new Error("재개할 세션 기록이 없습니다.");
-    const settings = this.options.settings.taskSnapshot(taskId);
-    if (!settings) throw new Error("작업 설정 스냅샷이 없습니다.");
+    const settings = this.settingsForTask(taskId);
+    if (!session) {
+      const artifact = this.options.store.latestArtifact(taskId, "omp-session");
+      if (!artifact || typeof artifact.metadata.cwd !== "string" ||
+          (artifact.metadata.phase !== "discussion" && artifact.metadata.phase !== "execution")) {
+        throw new Error("재개할 OMP 세션 기록이 없습니다.");
+      }
+      session = {
+        adapter: await this.options.engineFactory.create(taskId, artifact.metadata.cwd, settings, artifact.metadata.phase, artifact.location),
+        sessionFile: artifact.location,
+        phase: artifact.metadata.phase,
+        cwd: artifact.metadata.cwd,
+      };
+      await session.adapter.setSubagentSubscription("progress");
+      this.#sessions.set(taskId, session);
+    }
 
     const alive = this.options.supervisor.list(taskId).some((item) => item.role === "engine" && item.state === "running");
     if (!alive) {
