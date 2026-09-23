@@ -303,7 +303,7 @@ export class StateStore {
         metadata: JSON.parse(row.metadata_json as string) as Record<string, unknown> }));
   }
 
-  saveSettingsSnapshot(scope: "project" | "task", ownerId: string, settings: Record<string, unknown>, expectedRevision?: number): number {
+  saveSettingsSnapshot(scope: "project" | "task", ownerId: string, settings: object, expectedRevision?: number): number {
     if (!ownerId.trim()) throw new Error("설정 소유자가 필요합니다.");
     const row = this.db.prepare("SELECT revision FROM settings_snapshots WHERE scope=? AND owner_id=?").get(scope, ownerId) as { revision: number } | undefined;
     const revision = row?.revision ?? 0;
