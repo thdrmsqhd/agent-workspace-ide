@@ -14,7 +14,7 @@
   "scripts": {
     "docs:check": "node scripts/check-docs.mjs",
     "lint": "eslint .",
-    "typecheck": "npm run build:foundation && npm run build:core && npm run build:worktrees && tsc -p packages/persistence/tsconfig.json --noEmit && tsc -p packages/diff/tsconfig.json --noEmit && tsc -p packages/ui/tsconfig.json --noEmit && tsc -p packages/files/tsconfig.json --noEmit && tsc -p packages/processes/tsconfig.json --noEmit && tsc -p packages/attachments/tsconfig.json --noEmit && tsc -p packages/settings/tsconfig.json --noEmit && tsc -p packages/ide-integration/tsconfig.json --noEmit && tsc -p packages/engine-omp/tsconfig.json --noEmit && tsc -p packages/integration/tsconfig.json --noEmit && tsc -p packages/runtime/tsconfig.json --noEmit && tsc -p packages/recovery/tsconfig.json --noEmit && tsc -p packages/performance/tsconfig.json --noEmit",
+    "typecheck": "npm run build",
     "build:foundation": "tsc -p packages/contracts/tsconfig.json",
     "build:core": "tsc -p packages/core/tsconfig.json",
     "build:persistence": "tsc -p packages/persistence/tsconfig.json",
