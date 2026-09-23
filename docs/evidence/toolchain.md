@@ -29,3 +29,5 @@
 ## 첫 SQLite 저장 계층
 
 2026-09-23 임시 파일 DB에서 메시지+operation+이벤트의 원자적 저장·재시작 복원, 기록 실패 시 롤백, FK, 전달 중 재시작 때 `unknown` 격리, 기존 미지원 스키마 보존, WAL 온라인 백업을 통합 검사했다. `node:sqlite` API는 현재 Node 24 문서에서 [릴리스 후보](https://nodejs.org/download/release/latest-v24.x/docs/api/sqlite.html)로 분류된다. 최종 IDE 호스트의 런타임과 Windows 파일 잠금, 디스크 부족, crash 직후 WAL 복구, 실제 에이전트 전달은 아직 확인하지 않았다. 코드와 테스트는 `packages/persistence`, `tests/integration`에 있다.
+
+[SQLite 포함 기초 CI](https://github.com/thdrmsqhd/agent-workspace-ide/actions/runs/35816875908)의 Ubuntu·Windows 작업은 모두 통과했다. 최초 Windows 실행은 테스트가 DB 연결을 닫기 전에 임시 파일을 삭제하여 `EBUSY`가 발생했고, 연결 종료 후 삭제하도록 순서를 수정하여 재실행했다. 이 결과가 실제 제품의 디스크 부족·강제 종료 복구나 앱 연동을 증명하지는 않는다.
