@@ -56,6 +56,8 @@ AdapterCapabilities: protocolVersions, subagentEvents, abortTreeVerified, readOn
 
 필수 실패: readOnlyEnforced=false면 실제 논의 차단, abortTreeVerified=false면 중단 기능 출시 차단, sessionRelocationVerified=false면 기존 세션 이전 출시 차단. 화면 모형·모의 어댑터는 개발 가능하되 실제 기능 완료 표시 금지.
 
+TV-004의 raw OMP abort 실패를 제품에서 보완하기 위해 `packages/processes`가 작업별 OMP 프로세스 트리를 소유한다. 엔진 어댑터는 먼저 RPC `abort`를 요청하고 종료가 확인되지 않으면 해당 작업의 OMP 프로세스 트리만 종료해야 한다. Windows는 `taskkill /PID <pid> /T /F`, POSIX는 별도 process group에 SIGTERM 후 SIGKILL 승격을 사용한다. 이 fallback은 다른 작업의 OMP 프로세스를 건드리지 않는다. 단, 실제 `packages/engine-omp`와 연결한 TV-004 재검증 전에는 `abortTreeVerified=true`로 바꾸지 않는다.
+
 18.2.5 실측값(2026-09-23 기준):
 
 | 능력 | advertised | verified |
