@@ -25,6 +25,9 @@
     "build": "npm run build:foundation && npm run build:core && npm run build:persistence && npm run build:worktrees && npm run build:diff && npm run build:ui && npm run build:files",
     "test:unit": "npm run build && node --test tests/unit/*.test.mjs",
     "test:integration": "npm run build && node --test tests/integration/*.test.mjs",
+    "verify:omp:tv003": "node scripts/verification/omp-rpc/run.mjs tv-003",
+    "verify:omp:tv004": "node scripts/verification/omp-rpc/run.mjs tv-004",
+    "verify:omp:tv006": "node scripts/verification/omp-rpc/run.mjs tv-006",
     "dev": "node scripts/desktop-not-ready.mjs"
   },
   "devDependencies": {

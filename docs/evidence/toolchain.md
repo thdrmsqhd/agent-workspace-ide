@@ -1,20 +1,20 @@
-# IMP-01 도구 버전과 기초 검증
+# IMP-01 도구 버전과 검증 환경 실측
 
-2026-09-23. 기초 환경을 구성한 Linux 컨테이너에서 확인한 값이다. Windows, IDE 호스트, OMP 연동의 실행 결과가 아니다.
+2026-09-23. 저장소 고정값은 Linux 컨테이너에서, 검증 환경 실측값은 이 Windows 11 PC에서 확인했다. OMP 연동 검증은 실행했고 IDE 호스트 검증은 아직 실행하지 않았다.
 
 | 항목 | 현재 선택·측정 | 상태 |
 | --- | --- | --- |
 | Node.js | 24.19.0 | 개발 스캐폴드에 고정 (`.node-version`, `engines`) |
-| npm | 11.9.0 | npm workspaces와 `package-lock.json`에 고정 |
+| npm | 11.x | npm workspaces와 `package-lock.json`에 고정 |
 | TypeScript | 5.9.3 | 계약 패키지 개발 의존성 |
 | ESLint | 9.39.1 | 기초 정적 검사 개발 의존성 |
-| Git | 2.51.1 | 현재 Linux 환경에서 확인 |
+| Git | 2.52.0.windows.1 | 검증 PC에서 확인 |
 | SQLite | Node 24 내장 `node:sqlite` | Node API는 릴리스 후보 단계. 파일 DB 검사 완료, 최종 IDE 호스트에서 호환 확인 필요 |
 | Theia IDE/확장 | 미선택 | TV-001/002, IMP-02에서 검증 후 고정 |
-| OMP 런타임·RPC | 미선택 | TV-003/004/006, IMP-03에서 검증 후 고정 |
-| Windows 11 x64 | 기초 CI만 통과 | 실제 디버거·PTY·확장 수용 검증 필요 |
+| OMP 런타임·RPC | `omp` 18.2.5 | TV-003 통과, TV-004 실패(자손 중단), TV-006 통과(닫힌 구성). [증거](TV-003/README.md)에 버전 해시 기록 |
+| Windows 11 x64 | 기초 CI 통과 + OMP RPC 실측 | 실제 디버거·PTY·확장 수용 검증 필요 |
 
-이 문서는 실제 설치·검증 결과가 추가될 때 함께 갱신한다. `npm run build`는 계약과 영속성 없는 순수 코어 패키지만 컴파일하며 IDE 앱 실행을 뜻하지 않는다. `npm run dev`는 미구현 상태를 명확히 알리고 실패한다.
+이 문서는 실제 설치·검증 결과가 추가될 때 함께 갱신한다. `npm run build`는 계약과 영속성 없는 순수 코어 패키지만 컴파일하며 IDE 앱 실행을 뜻하지 않는다. `npm run dev`는 미구현 상태를 명확히 알리고 실패한다. `npm run verify:omp:*`는 로컬 인증 엔진이 있어야 하며 CI에서 실행하지 않는다.
 
 ## 기초 검사 결과
 
@@ -35,3 +35,29 @@
 ## 독립 기능 묶음
 
 2026-09-23 Linux 클린 설치에서 문서 26개 검사, lint, 현존 패키지 타입 검사, 단위 검사 15건, 임시 파일/Git 통합 검사 10건이 통과했다. 검사는 별도 워크트리 생성과 원본 미커밋 변경 보존, 선택 변경의 stale 프리뷰 거절·rename/삭제·바이너리 복사, Diff 원본 줄/EOL 유지, 정책 승인 범위, 탭 전환·초안 보존, 파일 저장 충돌, SQLite v1→v2 온라인 백업을 포함한다. [전체 독립 기능 CI](https://github.com/thdrmsqhd/agent-workspace-ide/actions/runs/35820225514)의 Ubuntu·Windows 작업도 모두 통과했다. IDE 편집기·확장·터미널·OMP 실연동 또는 사용자 수용 시험 결과는 아니다.
+
+## OMP 엔진 실측
+
+2026-09-23 이 PC에서 검증 스크립트를 실행해 확인한 값이다. 작업대는 매 실행마다 임시 디렉터리에 새로 만들고 사용자 프로젝트·세션·전역 설정을 수정하지 않았다.
+
+| 항목 | 실측 값 |
+| --- | --- |
+| OS | Windows 11 10.0.26200 (x64) |
+| Git | 2.52.0.windows.1 |
+| 엔진 | `omp` 18.2.5, `~/.bun/bin/omp.exe` sha256 `d2af3f99…f1023f` |
+| 엔진 본체 | `@oh-my-pi/pi-coding-agent` 18.2.5 `dist/cli.js` sha256 `56acf224…743237` |
+| 실행 구조 | bun 셰임이 `bun.exe`로 `dist/cli.js`를 띄우는 2단 프로세스 |
+| 인증 공급자 | `openai-codex`, `google-antigravity`, `xai-oauth` |
+| 검증 모델 | `openai-codex/gpt-6-astra` (수락 응답 19,054 입력·9 출력 토큰) |
+| VS Code | 1.135.0 (`08d4889f9ec4a1685d257b9b95de036c8e1ce1e5`, x64) |
+| Java 확장 | `redhat.java` 1.55.0, `vscjava.vscode-java-debug` 0.59.0, `vscjava.vscode-gradle` 3.18.0 |
+| Python 확장 | `ms-python.python` 2026.4.0, `ms-python.vscode-pylance` 2026.3.1, `ms-python.debugpy` 2026.6.0 |
+| JDK | Temurin 21.0.12, 25.0.2 (`.jdks`). PATH 기본은 1.8 |
+| Python | 3.11.16 |
+
+프레임 계약 실측: 물리 한 줄 1,048,576바이트, 재조립 논리 프레임 67,108,864바이트, 청크 페이로드 262,144바이트. `ready`는 `protocolVersion=1`, `supportedProtocolVersions=[1,2]`를 광고하고 v2에서만 청크를 보낸다. 실패 응답에는 `id`가 없을 수 있다. `bash` 출력은 768바이트로 절단된다.
+
+## 남은 확인
+
+- 최종 IDE 기반 후보와 버전 고정은 TV-001/002 실행 후 결정한다. 이 PC의 VS Code·확장 버전은 기준 구성의 참고값이며 대체가 아니다.
+- 자손까지 포함한 중단 경로, PTY, 디버거, 메모리 목표는 Windows 실측이 더 필요하다.

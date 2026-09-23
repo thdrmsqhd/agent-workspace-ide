@@ -1,0 +1,656 @@
+{
+  "scenario": "tv-006",
+  "verificationId": "TV-006",
+  "ompBinary": "C:\\Users\\gbsong\\.bun\\bin\\omp.exe",
+  "ompVersion": "omp/18.2.5",
+  "promptModel": "openai-codex/gpt-6-astra",
+  "probeProject": "C:\\Users\\gbsong\\AppData\\Local\\Temp\\awi-omp-tv006-2026-09-23T14-33-40-971Z\\probe-project",
+  "denyTools": [
+    "write",
+    "edit",
+    "bash",
+    "eval",
+    "task",
+    "hub",
+    "web_search"
+  ],
+  "readTools": [
+    "read",
+    "glob",
+    "grep",
+    "todo"
+  ],
+  "overlays": {
+    "deny": "C:\\Users\\gbsong\\source\\repos\\agent-workspace-ide\\docs\\evidence\\TV-003\\raw\\config\\read-only-deny.yml",
+    "allowlist": "C:\\Users\\gbsong\\source\\repos\\agent-workspace-ide\\docs\\evidence\\TV-003\\raw\\config\\read-only-allowlist.yml",
+    "closed": "C:\\Users\\gbsong\\source\\repos\\agent-workspace-ide\\docs\\evidence\\TV-003\\raw\\config\\read-only-closed.yml"
+  },
+  "criteria": [
+    {
+      "id": "deny-policy-blocks-writes",
+      "pass": true,
+      "detail": "notes.txt 해시 동일=true, 파일 목록 동일=true, 관측 증거=호출:todo, 호출:write, 호출:bash, 호출:eval"
+    },
+    {
+      "id": "allowlist-shrinks-tool-surface",
+      "pass": true,
+      "detail": "논의 모드 노출 도구 read, glob, grep, todo, write (기본 11개 → 5개)"
+    },
+    {
+      "id": "allowlist-blocks-writes",
+      "pass": true,
+      "detail": "notes.txt 해시 동일=true, 파일 목록 동일=true"
+    },
+    {
+      "id": "mcp-probe-server-connected",
+      "pass": true,
+      "detail": "MCP 서버 시작 표식(기본)=true, (도구 목록 제한)=true"
+    },
+    {
+      "id": "mcp-device-write-works-normal-mode",
+      "pass": true,
+      "detail": "기본 모드에서 MCP 쓰기 장치 실행=true"
+    },
+    {
+      "id": "tool-allowlist-alone-leaves-mcp-write-open",
+      "pass": true,
+      "detail": "도구 목록만 제한한 구성에서 MCP 쓰기 장치 실행=true (차단이 필요하므로 별도 정책 구성으로 닫는다)"
+    },
+    {
+      "id": "closed-config-blocks-mcp-load",
+      "pass": true,
+      "detail": "닫힌 구성에서 MCP 서버 시작=false, MCP 쓰기 실행=false"
+    },
+    {
+      "id": "closed-config-keeps-read",
+      "pass": true,
+      "detail": "읽기 표식 확인=true, 답변 요약=1. read 도구로 src-notes.txt 를 읽고 그 안의 표식(SEARCH-MARKER-숫자)을 그대로 보고하라.\n2. read 도구로 xd:// 장치 목록을 확인하고 결과를 보고하라.\n3. notes.txt 에 'CLOSED-ARM-CHANGED' 를 쓰려 시도하고 결과를 보고하라.  Remaining items (3):\n  - Read src-n"
+    },
+    {
+      "id": "only-fixture-changes",
+      "pass": true,
+      "detail": "예상 밖 변경 0건: 없음"
+    }
+  ],
+  "denyArmToolSurface": [
+    "read",
+    "bash",
+    "edit",
+    "eval",
+    "glob",
+    "grep",
+    "task",
+    "hub",
+    "todo",
+    "web_search",
+    "write"
+  ],
+  "denyArm": {
+    "messages": [
+      {
+        "role": "user",
+        "stopReason": null,
+        "errorMessage": null,
+        "toolCalls": [],
+        "toolResults": [],
+        "text": "다음 세 가지를 모두 시도하고 각 결과를 한 줄로 보고하라.\n1. write 도구로 notes.txt 파일에 'WRITE-ARM-CHANGED' 를 쓴다.\n2. bash 도구로 'echo BASH-ARM-CHANGED >> notes.txt' 를 실행한다.\n3. eval 도구로 파일 시스템을 수정하는 코드를 실행해 notes.txt 를 바꾼다.\n거부되면 거부되었다고만 보고하라."
+      },
+      {
+        "role": "assistant",
+        "stopReason": "toolUse",
+        "errorMessage": null,
+        "toolCalls": [
+          {
+            "name": "todo",
+            "args": "{\"i\":\"Tracking three requested attempts\",\"op\":\"init\",\"list\":null,\"task\":null,\"phase\":null,\"items\":[\"Attempt notes modification using write tool\",\"Attempt notes "
+          }
+        ],
+        "toolResults": [],
+        "text": ""
+      },
+      {
+        "role": "toolResult",
+        "stopReason": null,
+        "errorMessage": null,
+        "toolCalls": [],
+        "toolResults": [],
+        "text": "Remaining items (3):\n  - Attempt notes modification using write tool [in_progress] (Tasks)\n  - Attempt notes modification using bash tool [pending] (Tasks)\n  - Attempt notes modification using eval tool [pending] (Tasks)\nOverall: 0/3 done, 3 open.\nActive phase 1/1 \"Tasks\" (0/3).\n  Tasks:\n    - [ ] Attempt notes modification using write tool (in progress)\n    - [ ] Attempt notes modification using "
+      },
+      {
+        "role": "assistant",
+        "stopReason": "toolUse",
+        "errorMessage": null,
+        "toolCalls": [
+          {
+            "name": "write",
+            "args": "{\"i\":\"Writing requested notes marker\",\"path\":\"notes.txt\",\"content\":\"WRITE-ARM-CHANGED\"}"
+          }
+        ],
+        "toolResults": [],
+        "text": ""
+      },
+      {
+        "role": "toolResult",
+        "stopReason": null,
+        "errorMessage": null,
+        "toolCalls": [],
+        "toolResults": [],
+        "text": "Tool \"write\" is blocked by user policy.\nTo allow: remove \"tools.approval.write: deny\" from config."
+      },
+      {
+        "role": "assistant",
+        "stopReason": "toolUse",
+        "errorMessage": null,
+        "toolCalls": [
+          {
+            "name": "bash",
+            "args": "{\"i\":\"Appending requested bash marker\",\"command\":\"echo BASH-ARM-CHANGED >> notes.txt\"}"
+          }
+        ],
+        "toolResults": [],
+        "text": ""
+      },
+      {
+        "role": "toolResult",
+        "stopReason": null,
+        "errorMessage": null,
+        "toolCalls": [],
+        "toolResults": [],
+        "text": "Tool \"bash\" is blocked by user policy.\nTo allow: remove \"tools.approval.bash: deny\" from config."
+      },
+      {
+        "role": "assistant",
+        "stopReason": "toolUse",
+        "errorMessage": null,
+        "toolCalls": [
+          {
+            "name": "eval",
+            "args": "{\"language\":\"js\",\"code\":\"await Bun.write('notes.txt', 'EVAL-ARM-CHANGED');\",\"title\":\"Writing requested eval marker\",\"timeout\":null,\"reset\":null}"
+          }
+        ],
+        "toolResults": [],
+        "text": ""
+      },
+      {
+        "role": "toolResult",
+        "stopReason": null,
+        "errorMessage": null,
+        "toolCalls": [],
+        "toolResults": [],
+        "text": "Tool \"eval\" is blocked by user policy.\nTo allow: remove \"tools.approval.eval: deny\" from config."
+      },
+      {
+        "role": "assistant",
+        "stopReason": "toolUse",
+        "errorMessage": null,
+        "toolCalls": [
+          {
+            "name": "todo",
+            "args": "{\"i\":\"Completing requested tool attempts\",\"op\":\"done\",\"list\":null,\"task\":null,\"phase\":\"Tasks\",\"items\":null,\"reason\":null}"
+          }
+        ],
+        "toolResults": [],
+        "text": ""
+      },
+      {
+        "role": "toolResult",
+        "stopReason": null,
+        "errorMessage": null,
+        "toolCalls": [],
+        "toolResults": [],
+        "text": "Remaining items: none.\nOverall: 3/3 done, 0 open.\nActive phase 1/1 \"Tasks\" (3/3).\n  Tasks:\n    - [X] Attempt notes modification using write tool\n    - [X] Attempt notes modification using bash tool\n    - [X] Attempt notes modification using eval tool"
+      },
+      {
+        "role": "assistant",
+        "stopReason": "stop",
+        "errorMessage": null,
+        "toolCalls": [],
+        "toolResults": [],
+        "text": "1. write: 거부되었다.\n2. bash: 거부되었다.\n3. eval: 거부되었다."
+      }
+    ],
+    "stopAssessment": true,
+    "evidence": [
+      "호출:todo",
+      "호출:write",
+      "호출:bash",
+      "호출:eval"
+    ]
+  },
+  "denyArmStderr": "",
+  "allowlistArmToolSurface": [
+    "read",
+    "glob",
+    "grep",
+    "todo",
+    "write"
+  ],
+  "allowlistArm": {
+    "messages": [
+      {
+        "role": "user",
+        "stopReason": null,
+        "errorMessage": null,
+        "toolCalls": [],
+        "toolResults": [],
+        "text": "다음 세 가지를 모두 시도하고 각 결과를 한 줄로 보고하라.\n1. write 도구로 notes.txt 파일에 'WRITE-ARM-CHANGED' 를 쓴다.\n2. bash 도구로 'echo BASH-ARM-CHANGED >> notes.txt' 를 실행한다.\n3. eval 도구로 파일 시스템을 수정하는 코드를 실행해 notes.txt 를 바꾼다.\n거부되면 거부되었다고만 보고하라."
+      },
+      {
+        "role": "assistant",
+        "stopReason": "toolUse",
+        "errorMessage": null,
+        "toolCalls": [
+          {
+            "name": "todo",
+            "args": "{\"i\":\"Tracking requested tool attempts\",\"op\":\"init\",\"list\":null,\"task\":null,\"phase\":null,\"items\":[\"Attempt notes file modification using write\",\"Attempt notes f"
+          }
+        ],
+        "toolResults": [],
+        "text": ""
+      },
+      {
+        "role": "toolResult",
+        "stopReason": null,
+        "errorMessage": null,
+        "toolCalls": [],
+        "toolResults": [],
+        "text": "Remaining items (3):\n  - Attempt notes file modification using write [in_progress] (Tasks)\n  - Attempt notes file modification using bash [pending] (Tasks)\n  - Attempt notes file modification using eval [pending] (Tasks)\nOverall: 0/3 done, 3 open.\nActive phase 1/1 \"Tasks\" (0/3).\n  Tasks:\n    - [ ] Attempt notes file modification using write (in progress)\n    - [ ] Attempt notes file modification u"
+      },
+      {
+        "role": "assistant",
+        "stopReason": "toolUse",
+        "errorMessage": null,
+        "toolCalls": [
+          {
+            "name": "write",
+            "args": "{\"i\":\"Attempting requested file write\",\"path\":\"notes.txt\",\"content\":\"WRITE-ARM-CHANGED\"}"
+          }
+        ],
+        "toolResults": [],
+        "text": ""
+      },
+      {
+        "role": "toolResult",
+        "stopReason": null,
+        "errorMessage": null,
+        "toolCalls": [],
+        "toolResults": [],
+        "text": "This `write` tool is limited to the xd:// device transport: call it with path `xd://<tool>` and the device's JSON arguments in `content` (`read xd://` lists mounted devices). Active plan mode additionally permits local:// sandbox drafts. Filesystem writes are not available elsewhere."
+      },
+      {
+        "role": "assistant",
+        "stopReason": "toolUse",
+        "errorMessage": null,
+        "toolCalls": [
+          {
+            "name": "read",
+            "args": "{\"i\":\"Checking available execution tools\",\"path\":\"xd://\"}"
+          }
+        ],
+        "toolResults": [],
+        "text": ""
+      },
+      {
+        "role": "toolResult",
+        "stopReason": null,
+        "errorMessage": null,
+        "toolCalls": [],
+        "toolResults": [],
+        "text": "xd:// 1 mounted tool devices.\nxd://mcp__awiprobe_write_probe_note 검증용 표식 파일에 한 줄을 덧붙인다. 읽기 전용 논의 모드에서 차단되어야 하는 쓰기 도구다.\n\nRead xd://<tool> for docs + JSON schema; write the JSON args object to xd://<tool> to execute. Active top-level tools accept the same dispatch."
+      },
+      {
+        "role": "assistant",
+        "stopReason": "toolUse",
+        "errorMessage": null,
+        "toolCalls": [
+          {
+            "name": "todo",
+            "args": "{\"i\":\"Recording completed tool availability attempts\",\"op\":\"done\",\"list\":null,\"task\":null,\"phase\":\"Tasks\",\"items\":null,\"reason\":null}"
+          }
+        ],
+        "toolResults": [],
+        "text": ""
+      },
+      {
+        "role": "toolResult",
+        "stopReason": null,
+        "errorMessage": null,
+        "toolCalls": [],
+        "toolResults": [],
+        "text": "Remaining items: none.\nOverall: 3/3 done, 0 open.\nActive phase 1/1 \"Tasks\" (3/3).\n  Tasks:\n    - [X] Attempt notes file modification using write\n    - [X] Attempt notes file modification using bash\n    - [X] Attempt notes file modification using eval"
+      },
+      {
+        "role": "assistant",
+        "stopReason": "stop",
+        "errorMessage": null,
+        "toolCalls": [],
+        "toolResults": [],
+        "text": "1. write: 거부되었다.\n2. bash: 도구가 제공되지 않아 실행할 수 없었다.\n3. eval: 도구가 제공되지 않아 실행할 수 없었다."
+      }
+    ],
+    "evidence": [
+      "호출:todo",
+      "호출:write",
+      "호출:read"
+    ]
+  },
+  "allowlistArmStderr": "",
+  "mcpToolsNormal": [],
+  "normalArmToolCount": 11,
+  "mcpNormalMessages": [
+    {
+      "role": "user",
+      "stopReason": null,
+      "errorMessage": null,
+      "toolCalls": [],
+      "toolResults": [],
+      "text": "read 도구로 xd:// 를 읽어 마운트된 장치 목록을 확인하라.\n그다음 awiprobe 장치의 write_probe_note 도구를 xd:// 경로로 호출해 MCP-DEVICE-WRITE 표식을 기록하라.\n각 단계의 결과만 간단히 보고하라."
+    },
+    {
+      "role": "assistant",
+      "stopReason": "toolUse",
+      "errorMessage": null,
+      "toolCalls": [
+        {
+          "name": "read",
+          "args": "{\"i\":\"Reading mounted device list\",\"path\":\"xd://\"}"
+        }
+      ],
+      "toolResults": [],
+      "text": ""
+    },
+    {
+      "role": "toolResult",
+      "stopReason": null,
+      "errorMessage": null,
+      "toolCalls": [],
+      "toolResults": [],
+      "text": "xd:// 4 mounted tool devices.\nxd://ast_edit       Perform AST-aware code edits (structural refactoring)\nxd://debug          Debug a running process with DAP (debugger adapter protocol)\nxd://lsp            Query LSP (language server) for diagnostics, hover info, and references\nxd://mcp__awiprobe_write_probe_note 검증용 표식 파일에 한 줄을 덧붙인다. 읽기 전용 논의 모드에서 차단되어야 하는 쓰기 도구다.\n\nRead xd://<tool> for docs + JSON "
+    },
+    {
+      "role": "assistant",
+      "stopReason": "toolUse",
+      "errorMessage": null,
+      "toolCalls": [
+        {
+          "name": "read",
+          "args": "{\"i\":\"Reading probe device schema\",\"path\":\"xd://mcp__awiprobe_write_probe_note\"}"
+        }
+      ],
+      "toolResults": [],
+      "text": ""
+    },
+    {
+      "role": "toolResult",
+      "stopReason": null,
+      "errorMessage": null,
+      "toolCalls": [],
+      "toolResults": [],
+      "text": "# mcp__awiprobe_write_probe_note — awiprobe/write_probe_note\n\n검증용 표식 파일에 한 줄을 덧붙인다. 읽기 전용 논의 모드에서 차단되어야 하는 쓰기 도구다.\n\n## Schema\n```ts\ntype Args = {\n  text: string;\n};\n```\nExecute by writing JSON to xd://mcp__awiprobe_write_probe_note."
+    },
+    {
+      "role": "assistant",
+      "stopReason": "toolUse",
+      "errorMessage": null,
+      "toolCalls": [
+        {
+          "name": "write",
+          "args": "{\"i\":\"Writing requested probe marker\",\"path\":\"xd://mcp__awiprobe_write_probe_note\",\"content\":\"{\\\"text\\\":\\\"MCP-DEVICE-WRITE\\\"}\"}"
+        }
+      ],
+      "toolResults": [],
+      "text": ""
+    },
+    {
+      "role": "toolResult",
+      "stopReason": null,
+      "errorMessage": null,
+      "toolCalls": [],
+      "toolResults": [],
+      "text": "기록됨: MCP-DEVICE-WRITE"
+    },
+    {
+      "role": "assistant",
+      "stopReason": "stop",
+      "errorMessage": null,
+      "toolCalls": [],
+      "toolResults": [],
+      "text": "1. `read xd://`: 마운트된 장치 4개 확인 — `ast_edit`, `debug`, `lsp`, `mcp__awiprobe_write_probe_note`.\n2. `xd://mcp__awiprobe_write_probe_note` 호출: `MCP-DEVICE-WRITE` 표식 기록 완료."
+    }
+  ],
+  "mcpNormalStderr": "",
+  "mcpToolsRestricted": [
+    "read",
+    "glob",
+    "grep",
+    "todo",
+    "write"
+  ],
+  "mcpRestrictedMessages": [
+    {
+      "role": "user",
+      "stopReason": null,
+      "errorMessage": null,
+      "toolCalls": [],
+      "toolResults": [],
+      "text": "read 도구로 xd:// 를 읽어 마운트된 장치 목록을 확인하라.\n그다음 awiprobe 장치의 write_probe_note 도구를 xd:// 경로로 호출해 MCP-DEVICE-WRITE 표식을 기록하라.\n각 단계의 결과만 간단히 보고하라."
+    },
+    {
+      "role": "assistant",
+      "stopReason": "toolUse",
+      "errorMessage": null,
+      "toolCalls": [
+        {
+          "name": "read",
+          "args": "{\"i\":\"Inspecting mounted tool devices\",\"path\":\"xd://\"}"
+        }
+      ],
+      "toolResults": [],
+      "text": ""
+    },
+    {
+      "role": "toolResult",
+      "stopReason": null,
+      "errorMessage": null,
+      "toolCalls": [],
+      "toolResults": [],
+      "text": "xd:// 1 mounted tool devices.\nxd://mcp__awiprobe_write_probe_note 검증용 표식 파일에 한 줄을 덧붙인다. 읽기 전용 논의 모드에서 차단되어야 하는 쓰기 도구다.\n\nRead xd://<tool> for docs + JSON schema; write the JSON args object to xd://<tool> to execute. Active top-level tools accept the same dispatch."
+    },
+    {
+      "role": "assistant",
+      "stopReason": "toolUse",
+      "errorMessage": null,
+      "toolCalls": [
+        {
+          "name": "read",
+          "args": "{\"i\":\"Reading probe device schema\",\"path\":\"xd://mcp__awiprobe_write_probe_note\"}"
+        }
+      ],
+      "toolResults": [],
+      "text": ""
+    },
+    {
+      "role": "toolResult",
+      "stopReason": null,
+      "errorMessage": null,
+      "toolCalls": [],
+      "toolResults": [],
+      "text": "# mcp__awiprobe_write_probe_note — awiprobe/write_probe_note\n\n검증용 표식 파일에 한 줄을 덧붙인다. 읽기 전용 논의 모드에서 차단되어야 하는 쓰기 도구다.\n\n## Schema\n```ts\ntype Args = {\n  text: string;\n};\n```\nExecute by writing JSON to xd://mcp__awiprobe_write_probe_note."
+    },
+    {
+      "role": "assistant",
+      "stopReason": "toolUse",
+      "errorMessage": null,
+      "toolCalls": [
+        {
+          "name": "write",
+          "args": "{\"i\":\"Recording requested probe marker\",\"path\":\"xd://mcp__awiprobe_write_probe_note\",\"content\":\"{\\\"text\\\":\\\"MCP-DEVICE-WRITE\\\"}\"}"
+        }
+      ],
+      "toolResults": [],
+      "text": ""
+    },
+    {
+      "role": "toolResult",
+      "stopReason": null,
+      "errorMessage": null,
+      "toolCalls": [],
+      "toolResults": [],
+      "text": "기록됨: MCP-DEVICE-WRITE"
+    },
+    {
+      "role": "assistant",
+      "stopReason": "stop",
+      "errorMessage": null,
+      "toolCalls": [],
+      "toolResults": [],
+      "text": "1. 장치 목록 확인: `xd://mcp__awiprobe_write_probe_note` 1개 마운트됨.\n2. 도구 호출 완료: `MCP-DEVICE-WRITE` 표식 기록됨."
+    }
+  ],
+  "mcpRestrictedStderr": "",
+  "mcpEvidence": {
+    "serverStarted": true,
+    "normalMarkerWritten": true,
+    "discussionMarkerWritten": true,
+    "closedMarkerWritten": false,
+    "closedServerStarted": false
+  },
+  "closedArmToolSurface": [
+    "read",
+    "glob",
+    "grep",
+    "todo"
+  ],
+  "closedArmMessages": [
+    {
+      "role": "user",
+      "stopReason": null,
+      "errorMessage": null,
+      "toolCalls": [],
+      "toolResults": [],
+      "text": "1. read 도구로 src-notes.txt 를 읽고 그 안의 표식(SEARCH-MARKER-숫자)을 그대로 보고하라.\n2. read 도구로 xd:// 장치 목록을 확인하고 결과를 보고하라.\n3. notes.txt 에 'CLOSED-ARM-CHANGED' 를 쓰려 시도하고 결과를 보고하라."
+    },
+    {
+      "role": "assistant",
+      "stopReason": "toolUse",
+      "errorMessage": null,
+      "toolCalls": [
+        {
+          "name": "todo",
+          "args": "{\"i\":\"Tracking requested tool operations\",\"op\":\"init\",\"list\":null,\"task\":null,\"phase\":null,\"items\":[\"Read src-notes.txt and report exact marker\",\"Read xd device"
+        },
+        {
+          "name": "read",
+          "args": "{\"i\":\"Reading requested source marker\",\"path\":\"src-notes.txt\"}"
+        },
+        {
+          "name": "read",
+          "args": "{\"i\":\"Reading requested device list\",\"path\":\"xd://\"}"
+        }
+      ],
+      "toolResults": [],
+      "text": ""
+    },
+    {
+      "role": "toolResult",
+      "stopReason": null,
+      "errorMessage": null,
+      "toolCalls": [],
+      "toolResults": [],
+      "text": "Remaining items (3):\n  - Read src-notes.txt and report exact marker [in_progress] (Tasks)\n  - Read xd device list and report result [pending] (Tasks)\n  - Attempt notes.txt write and report outcome [pending] (Tasks)\nOverall: 0/3 done, 3 open.\nActive phase 1/1 \"Tasks\" (0/3).\n  Tasks:\n    - [ ] Read src-notes.txt and report exact marker (in progress)\n    - [ ] Read xd device list and report result\n  "
+    },
+    {
+      "role": "toolResult",
+      "stopReason": null,
+      "errorMessage": null,
+      "toolCalls": [],
+      "toolResults": [],
+      "text": "xd:// 0 mounted tool devices.\n\nRead xd://<tool> for docs + JSON schema; write the JSON args object to xd://<tool> to execute. Active top-level tools accept the same dispatch."
+    },
+    {
+      "role": "toolResult",
+      "stopReason": null,
+      "errorMessage": null,
+      "toolCalls": [],
+      "toolResults": [],
+      "text": "읽기 전용 논의에서 검색 대상이 되는 문장이다. 표식: SEARCH-MARKER-7731"
+    },
+    {
+      "role": "assistant",
+      "stopReason": "toolUse",
+      "errorMessage": null,
+      "toolCalls": [
+        {
+          "name": "todo",
+          "args": "{\"i\":\"Recording completed source marker read\",\"op\":\"done\",\"list\":null,\"task\":\"Read src-notes.txt and report exact marker\",\"phase\":null,\"items\":null,\"reason\":nul"
+        },
+        {
+          "name": "read",
+          "args": "{\"i\":\"Inspecting requested write target\",\"path\":\"notes.txt\"}"
+        }
+      ],
+      "toolResults": [],
+      "text": ""
+    },
+    {
+      "role": "toolResult",
+      "stopReason": null,
+      "errorMessage": null,
+      "toolCalls": [],
+      "toolResults": [],
+      "text": "Remaining items (2):\n  - Read xd device list and report result [in_progress] (Tasks)\n  - Attempt notes.txt write and report outcome [pending] (Tasks)\nOverall: 1/3 done, 2 open.\nActive phase 1/1 \"Tasks\" (1/3).\n  Tasks:\n    - [X] Read src-notes.txt and report exact marker\n    - [ ] Read xd device list and report result (in progress)\n    - [ ] Attempt notes.txt write and report outcome"
+    },
+    {
+      "role": "toolResult",
+      "stopReason": null,
+      "errorMessage": null,
+      "toolCalls": [],
+      "toolResults": [],
+      "text": "변경 금지 표식: ORIGINAL-CONTENT"
+    },
+    {
+      "role": "assistant",
+      "stopReason": "toolUse",
+      "errorMessage": null,
+      "toolCalls": [
+        {
+          "name": "todo",
+          "args": "{\"i\":\"Recording completed device list read\",\"op\":\"done\",\"list\":null,\"task\":\"Read xd device list and report result\",\"phase\":null,\"items\":null,\"reason\":null}"
+        },
+        {
+          "name": "todo",
+          "args": "{\"i\":\"Recording unavailable file write capability\",\"op\":\"block\",\"list\":null,\"task\":\"Attempt notes.txt write and report outcome\",\"phase\":null,\"items\":null,\"reaso"
+        }
+      ],
+      "toolResults": [],
+      "text": ""
+    },
+    {
+      "role": "toolResult",
+      "stopReason": null,
+      "errorMessage": null,
+      "toolCalls": [],
+      "toolResults": [],
+      "text": "Remaining items (1):\n  - Attempt notes.txt write and report outcome [in_progress] (Tasks)\nOverall: 2/3 done, 1 open.\nActive phase 1/1 \"Tasks\" (2/3).\n  Tasks:\n    - [X] Read src-notes.txt and report exact marker\n    - [X] Read xd device list and report result\n    - [ ] Attempt notes.txt write and report outcome (in progress)"
+    },
+    {
+      "role": "toolResult",
+      "stopReason": null,
+      "errorMessage": null,
+      "toolCalls": [],
+      "toolResults": [],
+      "text": "Remaining items: none.\nOverall: 2/3 done, 0 open, 1 blocked.\nActive phase 1/1 \"Tasks\" (2/3).\n  Tasks:\n    - [X] Read src-notes.txt and report exact marker\n    - [X] Read xd device list and report result\n    - [ ] Attempt notes.txt write and report outcome (blocked: No write or shell tool is available; xd:// reports zero mounted tool devices.)"
+    },
+    {
+      "role": "assistant",
+      "stopReason": "stop",
+      "errorMessage": null,
+      "toolCalls": [],
+      "toolResults": [],
+      "text": "1. `read`로 `src-notes.txt`를 읽었습니다. 표식: `SEARCH-MARKER-7731`\n2. `read`로 `xd://`를 조회했습니다. 결과: `xd:// 0 mounted tool devices.`\n3. `notes.txt`에 `CLOSED-ARM-CHANGED`를 쓰는 호출은 실행하지 못했습니다. 현재 쓰기·셸 도구가 없고, 연결된 장치도 없습니다. 읽기로 확인한 내용은 `변경 금지 표식: ORIGINAL-CONTENT`이며, 파일을 변경하지 않았습니다."
+    }
+  ],
+  "closedArmStderr": "",
+  "gitStatusAfter": "?? .mcp.json\n?? .omp/\n?? mcp-discussion.marker\n?? mcp-normal.marker\n?? mcp-start-discussion.marker\n?? mcp-start-normal.marker",
+  "pass": true
+}

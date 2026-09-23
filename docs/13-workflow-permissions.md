@@ -35,6 +35,8 @@ allowedActions는 edit,runLocal,merge,push,createPR로 구분한다. 지침이 �
 
 논의 제한은 도구 목록·실행 호스트에서 적용한다. MCP의 읽기/쓰기 특성이 불명확하면 논의 단계에서 허용하지 않는다. 모델이 셸로 우회할 수 있으면 읽기 전용 검증 실패다.
 
+18.2.5 실측(2026-09-23)에서 논의 모드 구성을 다음 세 가지 조합으로 확정했다: 도구 목록 `read`·`glob`·`grep`·`todo`, 승인 정책 `write`·`edit`·`bash`·`eval`·`task`·`hub`·`web_search` 거부, 프로젝트 MCP 설정 차단(`mcp.enableProjectConfig=false`). 이 조합에서 쓰기·셸·MCP 쓰기 시도가 모두 호스트에서 차단되고 프로젝트 읽기·검색은 유지됨을 확인했다. 도구 목록만 제한하면 프로젝트 MCP 쓰기 장치가 계속 실행되므로 목록 제한 단독 사용을 금지한다. 근거와 오버레이 파일은 [TV-006 결과](../docs/evidence/TV-006/README.md)에 있다.
+
 Git 반영은 Worktree Service와 Integration Coordinator를 경유한다. 에이전트의 임의 셸이 원본 대상·원격을 변경하지 못하도록 엔진 도구 훅/호스트 도구로 정책을 검사한다. 단순 명령 문자열 차단 목록만으로 보호가 완성됐다고 보지 않는다. 선택 OMP 버전에서 경계 적용이 불가능하면 해당 흐름은 출시 차단이며 UI 확인창으로 대체하지 않는다.
 
 이 정책은 신뢰하지 않는 코드를 OS 수준 격리하는 보안 샌드박스가 아니다. 일반 개발 환경 권한 아래 동작한다는 한계를 문서화한다.
@@ -49,4 +51,4 @@ Git 반영은 Worktree Service와 Integration Coordinator를 경유한다. 에�
 
 ## 6. 구현 상태
 
-`packages/core/src/policy.ts`에 논의 쓰기·셸 거절, 자동 반영 시 명시 행위 범위, 수동 반영 시 snapshot/HEAD/policyHash 승인 비교를 구현했다. 현재는 순수 판정 함수다. OMP 도구 훅과 Git/프로세스 실행 경계에 실제 연결하고 지침 요약을 생성하기 전에는 읽기 전용 실행 보호나 외부 반영 권한 강제가 완료된 것이 아니다.
+`packages/core/src/policy.ts`에 논의 쓰기·셸 거절, 자동 반영 시 명시 행위 범위, 수동 반영 시 snapshot/HEAD/policyHash 승인 비교를 구현했다. 현재는 순수 판정 함수다. 18.2.5 엔진에는 논의 제한을 도구 목록·승인 정책·프로젝트 MCP 차단으로 실제 적용함을 확인했으나([TV-006](../docs/evidence/TV-006/README.md)), 앱 코드에서 이 구성을 생성·강제로 연결하기 전에는 읽기 전용 실행 보호가 완료된 것이 아니다. 자손 중단(`abort`가 하위 에이전트를 멈추지 못함)과 Git/프로세스 실행 경계 연결도 남아 있다.

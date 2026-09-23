@@ -56,4 +56,17 @@ AdapterCapabilities: protocolVersions, subagentEvents, abortTreeVerified, readOn
 
 필수 실패: readOnlyEnforced=false면 실제 논의 차단, abortTreeVerified=false면 중단 기능 출시 차단, sessionRelocationVerified=false면 기존 세션 이전 출시 차단. 화면 모형·모의 어댑터는 개발 가능하되 실제 기능 완료 표시 금지.
 
-참고: https://github.com/can1357/oh-my-pi/blob/main/docs/rpc.md 및 docs/sdk.md. 이번 조사 RPC 파일 blob: b91b20a85aca2eacc7272cac7f1a55370449bc05. 버전 고정 전 main을 배포 의존성으로 사용하지 않는다.
+18.2.5 실측값(2026-09-23 기준):
+
+| 능력 | advertised | verified |
+| --- | --- | --- |
+| protocolVersions | [1, 2] | [1, 2] 협상 확인 |
+| subagentEvents | progress · events | progress·events 구독과 하위 메시지 페이징 확인 |
+| abortTreeVerified | 미광고 | **false** — 자손 셸이 계속 실행됨 |
+| readOnlyEnforced | 미광고 | true (도구 목록 + 승인 정책 거부 + 프로젝트 MCP 차단 조합일 때만) |
+| sessionRelocationVerified | switch_session · branch · handoff 제공 | 미검증(TV-007) |
+| hostTools | set_host_tools · host_tool_call | 미검증 |
+| historyPaging | get_messages_page · get_subagent_messages | 확인(바이트 커서, reset 플래그) |
+| modelSwitch | set_model · get_available_models | 모델 목록 조회 확인, 전환 미검증 |
+
+프레임 계약 실측: 물리 한 줄 1,048,576바이트, 재조립 논리 프레임 67,108,864바이트, 청크 페이로드 262,144바이트, 청크는 v2 전용. 실패 응답에는 `id`가 없을 수 있고, `bash` 명령 출력은 768바이트로 절단된다. 자세한 내용은 [TV-003](../docs/evidence/TV-003/README.md)에 있다. 참고: https://github.com/can1357/oh-my-pi/blob/main/docs/rpc.md 및 docs/sdk.md. 버전 고정 전 main을 배포 의존성으로 사용하지 않는다. 검증에 사용한 실행 파일 해시는 [도구 버전 실측](../docs/evidence/toolchain.md)에 있다.

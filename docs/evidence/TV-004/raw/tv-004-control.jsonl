@@ -1,0 +1,5 @@
+{"ts":1790174312024,"direction":"stdout","text":"{\"type\":\"ready\",\"protocolVersion\":1,\"supportedProtocolVersions\":[1,2],\"maxFrameBytes\":1048576,\"maxReassembledFrameBytes\":67108864}"}
+{"ts":1790174312026,"direction":"stdout","text":"{\"type\":\"extension_ui_request\",\"id\":\"158afa6196d9dab8\",\"method\":\"setWidget\",\"widgetKey\":\"autoresearch\"}"}
+{"ts":1790174312027,"direction":"stdin","text":"{\"type\":\"bash\",\"command\":\"while [ ! -f /c/Users/gbsong/AppData/Local/Temp/awi-omp-tv004-2026-09-23T14-38-29-181Z/probe-project/control.marker.stop ]; do date +%s%N > /c/Users/gbsong/AppData/Local/Temp/awi-omp-tv004-2026-09-23T14-38-29-181Z/probe-project/control.marker; sleep 0.5; done; echo LOOP-ENDED\",\"id\":\"req-1\"}"}
+{"ts":1790174312088,"direction":"stdout","text":"{\"type\":\"advisor_cost_changed\"}"}
+{"ts":1790174312091,"direction":"stdout","text":"{\"type\":\"available_commands_update\",\"note\":\"초대형 줄 축약: 페이로드 생략. 원본은 하네스 재실행으로 재생성된다.\"}","trimmed":true,"originalBytes":23646}

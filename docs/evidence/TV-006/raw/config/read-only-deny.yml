@@ -1,0 +1,11 @@
+# 논의(읽기 전용) 모드 검증용 오버레이. 쓰기·실행 계열 도구를 정책으로 거부한다.
+tools:
+  approvalMode: yolo
+  approval:
+    write: deny
+    edit: deny
+    bash: deny
+    eval: deny
+    task: deny
+    hub: deny
+    web_search: deny

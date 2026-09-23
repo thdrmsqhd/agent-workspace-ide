@@ -28,6 +28,9 @@ apps/desktop과 packages/{contracts,core,engine-omp,worktrees,processes,persiste
 | npm run docs:check | 구현: 상대 문서 링크·정의 ID·요구사항-수용 연결·표 구조·일본어 가나 검사. enum·모든 문장 내 참조 검증은 향후 확장 |
 | npm run test:unit | 구현: 큐·Esc·12슬롯·정책·Diff·화면 상태 일부 검사. 향후 전체 상태 포함 |
 | npm run test:integration | 구현: 임시 파일 SQLite·Git 워크트리/변경 가져오기·조건부 파일 저장. 향후 엔진 경계 포함 |
+| npm run verify:omp:tv003 | 구현: 실제 OMP RPC 연결·프레임·요청 ID 검증. 로컬 인증 엔진 필요, CI 미실행 |
+| npm run verify:omp:tv004 | 구현: 하위 에이전트 트리·중단 검증. 모델 호출 발생, CI 미실행 |
+| npm run verify:omp:tv006 | 구현: 읽기 전용 강제 검증. 모델 호출 발생, CI 미실행 |
 | npm run test:windows | 미구현: 실제 PTY·IDE·debug 시나리오 |
 | npm run test:acceptance | 미구현: AT 시나리오 결과 생성 |
 | npm run perf:collect | 미구현: PERF 측정·원시 결과 저장 |

@@ -1,0 +1,13 @@
+# 논의(읽기 전용) 모드를 실제로 닫는 구성: 프로젝트 MCP 설정을 로드하지 않고 쓰기·실행 계열 도구를 거부한다.
+mcp:
+  enableProjectConfig: false
+tools:
+  approvalMode: yolo
+  approval:
+    write: deny
+    edit: deny
+    bash: deny
+    eval: deny
+    task: deny
+    hub: deny
+    web_search: deny

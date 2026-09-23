@@ -1,0 +1,179 @@
+{
+  "scenario": "tv-003",
+  "verificationId": "TV-003",
+  "ompBinary": "C:\\Users\\gbsong\\.bun\\bin\\omp.exe",
+  "ompVersion": "omp/18.2.5",
+  "probeProject": "C:\\Users\\gbsong\\AppData\\Local\\Temp\\awi-omp-tv003-2026-09-23T14-28-13-696Z\\probe-project",
+  "sessionDir": "C:\\Users\\gbsong\\AppData\\Local\\Temp\\awi-omp-tv003-2026-09-23T14-28-13-696Z\\sessions",
+  "modelFlag": "없음 (사용자 기본 설정)",
+  "criteria": [
+    {
+      "id": "handshake",
+      "pass": true,
+      "detail": "protocolVersion=1, supported=[1,2], maxFrameBytes=1048576, maxReassembledFrameBytes=67108864"
+    },
+    {
+      "id": "protocol-v2-negotiation",
+      "pass": true,
+      "detail": "{\"protocolVersion\":2}"
+    },
+    {
+      "id": "tool-surface",
+      "pass": true,
+      "detail": "11개: read, bash, edit, eval, glob, grep, task, hub, todo, web_search, write"
+    },
+    {
+      "id": "concurrent-id-binding",
+      "pass": true,
+      "detail": "req-3/get_state + req-4/get_session_stats"
+    },
+    {
+      "id": "delayed-response",
+      "pass": true,
+      "detail": "지연 3090ms, 표식=true, id=req-5"
+    },
+    {
+      "id": "failure-frame-shape",
+      "pass": true,
+      "detail": "미지 명령: id=undefined error=\"Unknown command: definitely_not_a_command\", 파싱 오류: id=undefined error=\"Failed to parse command: JSON Parse error: Unexpected identifier \"this\"\""
+    },
+    {
+      "id": "session-survives-failure",
+      "pass": true,
+      "detail": "실패 후 get_state 성공=true"
+    },
+    {
+      "id": "bash-output-cap",
+      "pass": true,
+      "detail": "1024→768B, 102400→768B, 5242880→768B"
+    },
+    {
+      "id": "oversized-command-1mb",
+      "pass": true,
+      "detail": "stdin 1200000자 수락=true, 응답 세션명 1200000자, chunk 1건(완결 1건, 무효 0건)"
+    },
+    {
+      "id": "acceptance-vs-completion",
+      "pass": true,
+      "detail": "수락 4ms(응답에 agentInvoked 필드 없음=true), 완료 경계 agent_end(isTerminal=true) 2511ms"
+    },
+    {
+      "id": "no-project-mutation",
+      "pass": true,
+      "detail": "git status 깨끗함"
+    }
+  ],
+  "ready": {
+    "type": "ready",
+    "protocolVersion": 1,
+    "supportedProtocolVersions": [
+      1,
+      2
+    ],
+    "maxFrameBytes": 1048576,
+    "maxReassembledFrameBytes": 67108864
+  },
+  "toolSurface": [
+    "read",
+    "bash",
+    "edit",
+    "eval",
+    "glob",
+    "grep",
+    "task",
+    "hub",
+    "todo",
+    "web_search",
+    "write"
+  ],
+  "sessionId": "01a0ceaa-ccdf-73b8-a8ed-21ceef54951f",
+  "model": "openai-codex/gpt-6-astra",
+  "failureFrames": {
+    "unknown": {
+      "type": "response",
+      "command": "definitely_not_a_command",
+      "success": false,
+      "error": "Unknown command: definitely_not_a_command"
+    },
+    "parseError": {
+      "type": "response",
+      "command": "parse",
+      "success": false,
+      "error": "Failed to parse command: JSON Parse error: Unexpected identifier \"this\""
+    }
+  },
+  "bashOutputLadder": [
+    {
+      "requestedBytes": 1024,
+      "returnedBytes": 768,
+      "success": true
+    },
+    {
+      "requestedBytes": 102400,
+      "returnedBytes": 768,
+      "success": true
+    },
+    {
+      "requestedBytes": 5242880,
+      "returnedBytes": 768,
+      "success": true
+    }
+  ],
+  "oversizedCommand": {
+    "requestedNameLength": 1200000,
+    "response": {
+      "id": "req-11",
+      "success": true,
+      "error": null
+    },
+    "returnedNameLength": 1200000,
+    "chunks": [
+      {
+        "chunkId": "rpc-1",
+        "count": 5,
+        "declaredBytes": 1277485,
+        "receivedBytes": 1277485,
+        "assembledBytes": 1277485,
+        "invalid": null,
+        "complete": true
+      }
+    ]
+  },
+  "historyPaging": {
+    "entries": 0,
+    "nextByte": null,
+    "reset": null
+  },
+  "prompt": {
+    "acceptance": {
+      "id": "req-15",
+      "success": true,
+      "data": null,
+      "latencyMs": 4
+    },
+    "completion": {
+      "eventType": "agent_end",
+      "isTerminal": true,
+      "latencyMs": 2511
+    },
+    "eventTypes": [
+      "ready",
+      "extension_ui_request",
+      "advisor_cost_changed",
+      "available_commands_update",
+      "agent_start",
+      "turn_start",
+      "message_start",
+      "message_end",
+      "message_update",
+      "turn_end",
+      "agent_end"
+    ]
+  },
+  "projectUnchanged": true,
+  "unparsedLines": [],
+  "stderrTail": "",
+  "rawLogBytes": 3196491,
+  "rawLogPath": "C:\\Users\\gbsong\\source\\repos\\agent-workspace-ide\\docs\\evidence\\TV-003\\raw\\tv-003.jsonl",
+  "pass": true
+}

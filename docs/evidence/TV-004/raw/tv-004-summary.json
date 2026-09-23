@@ -1,0 +1,259 @@
+{
+  "scenario": "tv-004",
+  "verificationId": "TV-004",
+  "ompBinary": "C:\\Users\\gbsong\\.bun\\bin\\omp.exe",
+  "ompVersion": "omp/18.2.5",
+  "promptModel": "openai-codex/gpt-6-astra",
+  "probeProject": "C:\\Users\\gbsong\\AppData\\Local\\Temp\\awi-omp-tv004-2026-09-23T14-38-29-181Z\\probe-project",
+  "prompt": "다음 작업을 순서대로 수행하라.\n1. task 도구로 하위 에이전트 두 개를 동시에 실행한다.\n2. 첫 번째 하위 에이전트에게는 정확히 이 bash 명령을 실행하게 하라:\n   while [ ! -f /c/Users/gbsong/AppData/Local/Temp/awi-omp-tv004-2026-09-23T14-38-29-181Z/probe-project/sub-a.marker.stop ]; do date +%s%N > /c/Users/gbsong/AppData/Local/Temp/awi-omp-tv004-2026-09-23T14-38-29-181Z/probe-project/sub-a.marker; sleep 0.5; done; echo LOOP-ENDED\n3. 두 번째 하위 에이전트에게는 정확히 이 bash 명령을 실행하게 하라:\n   while [ ! -f /c/Users/gbsong/AppData/Local/Temp/awi-omp-tv004-2026-09-23T14-38-29-181Z/probe-project/sub-b.marker.stop ]; do date +%s%N > /c/Users/gbsong/AppData/Local/Temp/awi-omp-tv004-2026-09-23T14-38-29-181Z/probe-project/sub-b.marker; sleep 0.5; done; echo LOOP-ENDED\n4. 두 하위 에이전트가 끝날 때까지 기다린다. 다른 도구는 쓰지 않는다.",
+  "criteria": [
+    {
+      "id": "subagent-tree-visible",
+      "pass": true,
+      "detail": "관측 하위 에이전트 2개: MarkerLo(running), MarkerLo(running)"
+    },
+    {
+      "id": "subagent-messages-paging",
+      "pass": true,
+      "detail": "{\"sessionFile\":\"C:\\\\Users\\\\gbsong\\\\AppData\\\\Local\\\\Temp\\\\awi-omp-tv004-2026-09-23T14-38-29-181Z\\\\sessions\\\\2026-09-23T14-38-30-706Z_01a0ceb4-3132-775b-8d43-da630ea6d045\\\\MarkerLoopA.jsonl\",\"fromByte\":0,\"nextByte\":29720,\"reset\":false,\"entries\":3}"
+    },
+    {
+      "id": "descendant-work-running",
+      "pass": true,
+      "detail": "하위 에이전트 두 개의 표식이 모두 갱신됨=true"
+    },
+    {
+      "id": "abort-tree-stopped",
+      "pass": false,
+      "detail": "중단 후 20초 동안 표식 갱신 A=10회, B=10회, 하위 상태=running, running"
+    },
+    {
+      "id": "other-work-preserved",
+      "pass": true,
+      "detail": "대조군 표식 갱신 1790174355254.458→1790174373208.669, 엔진 생존=true"
+    },
+    {
+      "id": "main-not-streaming-after-abort",
+      "pass": true,
+      "detail": "isStreaming=false"
+    }
+  ],
+  "subagentsObserved": [
+    {
+      "id": "MarkerLoopA",
+      "index": 0,
+      "agent": "task",
+      "status": "running",
+      "description": null,
+      "sessionFile": "C:\\Users\\gbsong\\AppData\\Local\\Temp\\awi-omp-tv004-2026-09-23T14-38-29-181Z\\sessions\\2026-09-23T14-38-30-706Z_01a0ceb4-3132-775b-8d43-da630ea6d045\\MarkerLoopA.jsonl",
+      "parentToolCallId": "call_Ng8yyy1ejYkdhuaJgtMvP5gr|fc_0a74db8d91d449ed016ab3e46fb1a487d0ad26aa6739cac09c"
+    },
+    {
+      "id": "MarkerLoopB",
+      "index": 1,
+      "agent": "task",
+      "status": "running",
+      "description": null,
+      "sessionFile": "C:\\Users\\gbsong\\AppData\\Local\\Temp\\awi-omp-tv004-2026-09-23T14-38-29-181Z\\sessions\\2026-09-23T14-38-30-706Z_01a0ceb4-3132-775b-8d43-da630ea6d045\\MarkerLoopB.jsonl",
+      "parentToolCallId": "call_Ng8yyy1ejYkdhuaJgtMvP5gr|fc_0a74db8d91d449ed016ab3e46fb1a487d0ad26aa6739cac09c"
+    }
+  ],
+  "subagentMessages": {
+    "sessionFile": "C:\\Users\\gbsong\\AppData\\Local\\Temp\\awi-omp-tv004-2026-09-23T14-38-29-181Z\\sessions\\2026-09-23T14-38-30-706Z_01a0ceb4-3132-775b-8d43-da630ea6d045\\MarkerLoopA.jsonl",
+    "fromByte": 0,
+    "nextByte": 29720,
+    "reset": false,
+    "entries": 3
+  },
+  "descendantStartupWait": {
+    "bothRunning": true,
+    "samples": [
+      {
+        "a": 0,
+        "b": 0
+      },
+      {
+        "a": 0,
+        "b": 0
+      },
+      {
+        "a": 0,
+        "b": 1790174350088.2993
+      },
+      {
+        "a": 1790174351702.4941,
+        "b": 1790174352864.7915
+      }
+    ]
+  },
+  "afterAbortSampling": {
+    "aChanges": 10,
+    "bChanges": 10,
+    "samples": [
+      {
+        "at": 2076,
+        "a": 1790174355042.141,
+        "b": 1790174355058.242,
+        "control": 1790174355254.458
+      },
+      {
+        "at": 4080,
+        "a": 1790174357283.008,
+        "b": 1790174357283.008,
+        "control": 1790174357304.9133
+      },
+      {
+        "at": 6086,
+        "a": 1790174358964.0083,
+        "b": 1790174358964.0083,
+        "control": 1790174358847.6565
+      },
+      {
+        "at": 8089,
+        "a": 1790174361199.3323,
+        "b": 1790174361200.5034,
+        "control": 1790174360896.214
+      },
+      {
+        "at": 10097,
+        "a": 1790174362880.0984,
+        "b": 1790174362880.0984,
+        "control": 1790174362948.6692
+      },
+      {
+        "at": 12104,
+        "a": 1790174365125.4534,
+        "b": 1790174365126.934,
+        "control": 1790174365007.7273
+      },
+      {
+        "at": 14109,
+        "a": 1790174366795.932,
+        "b": 1790174366813.0093,
+        "control": 1790174367054.185
+      },
+      {
+        "at": 16123,
+        "a": 1790174369030.3315,
+        "b": 1790174369030.3315,
+        "control": 1790174369099.4392
+      },
+      {
+        "at": 18125,
+        "a": 1790174371268.1382,
+        "b": 1790174371268.1382,
+        "control": 1790174371150.3672
+      },
+      {
+        "at": 20138,
+        "a": 1790174372951.8938,
+        "b": 1790174372951.8938,
+        "control": 1790174373208.669
+      }
+    ]
+  },
+  "subagentsAfterAbort": [
+    {
+      "id": "MarkerLoopA",
+      "status": "running",
+      "description": null
+    },
+    {
+      "id": "MarkerLoopB",
+      "status": "running",
+      "description": null
+    }
+  ],
+  "afterAbortStreaming": false,
+  "eventTypes": [
+    "ready",
+    "extension_ui_request",
+    "advisor_cost_changed",
+    "available_commands_update",
+    "agent_start",
+    "turn_start",
+    "message_start",
+    "message_end",
+    "message_update",
+    "tool_execution_start",
+    "tool_execution_update",
+    "tool_execution_end",
+    "turn_end",
+    "subagent_lifecycle",
+    "subagent_event",
+    "subagent_progress",
+    "agent_end"
+  ],
+  "subagentEventTypes": [
+    "subagent_lifecycle",
+    "subagent_event",
+    "subagent_progress"
+  ],
+  "toolEvents": [
+    {
+      "type": "tool_execution_start",
+      "toolName": "task",
+      "isError": null
+    },
+    {
+      "type": "tool_execution_update",
+      "toolName": "task",
+      "isError": null
+    },
+    {
+      "type": "tool_execution_update",
+      "toolName": "task",
+      "isError": null
+    },
+    {
+      "type": "tool_execution_update",
+      "toolName": "task",
+      "isError": null
+    },
+    {
+      "type": "tool_execution_end",
+      "toolName": "task",
+      "isError": false
+    },
+    {
+      "type": "tool_execution_update",
+      "toolName": "task",
+      "isError": null
+    },
+    {
+      "type": "tool_execution_update",
+      "toolName": "task",
+      "isError": null
+    },
+    {
+      "type": "tool_execution_update",
+      "toolName": "task",
+      "isError": null
+    },
+    {
+      "type": "tool_execution_update",
+      "toolName": "task",
+      "isError": null
+    },
+    {
+      "type": "tool_execution_update",
+      "toolName": "task",
+      "isError": null
+    },
+    {
+      "type": "tool_execution_update",
+      "toolName": "task",
+      "isError": null
+    },
+    {
+      "type": "tool_execution_update",
+      "toolName": "task",
+      "isError": null
+    }
+  ],
+  "unparsedLines": [],
+  "stderrTail": "",
+  "rawLogPath": "C:\\Users\\gbsong\\source\\repos\\agent-workspace-ide\\docs\\evidence\\TV-003\\raw\\tv-004.jsonl",
+  "controlLogPath": "C:\\Users\\gbsong\\source\\repos\\agent-workspace-ide\\docs\\evidence\\TV-003\\raw\\tv-004-control.jsonl",
+  "pass": false
+}
