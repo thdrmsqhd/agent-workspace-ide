@@ -7,7 +7,7 @@ import {
   abort, claimNext, confirmStopped, deleteQueued, enqueue, markUnknown,
   resume, updateQueued, type QueuedMessage, type TaskQueue,
 } from "@awi/core";
-import { initialSchema, viewSchema } from "./schema.js";
+import { initialSchema, runtimeSchema, viewSchema } from "./schema.js";
 
 type Row = Record<string, unknown>;
 type StoredResult = { operationId: string; task: TaskQueue; messageId?: string };
@@ -73,7 +73,7 @@ export class StateStore {
     const migrationTable = this.db.prepare("SELECT name FROM sqlite_master WHERE type='table' AND name='schema_migrations'").get();
     const otherTables = this.db.prepare("SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%' AND name <> 'schema_migrations'").all();
     if (!migrationTable && otherTables.length) throw new Error("알 수 없는 기존 DB 스키마입니다. 원본을 보존하고 수동으로 확인해 주세요.");
-    const migrations = [initialSchema, viewSchema];
+    const migrations = [initialSchema, viewSchema, runtimeSchema];
     let applied = 0;
     if (migrationTable) {
       const rows = this.db.prepare("SELECT id, checksum FROM schema_migrations ORDER BY id").all() as { id: number; checksum: string }[];
@@ -225,6 +225,104 @@ export class StateStore {
     });
   }
 
+
+  saveAttachment(taskId: string | undefined, attachment: { id: string; kind: "file" | "folder" | "image" | "code-selection"; relativePath: string; metadata?: Record<string, unknown> }): void {
+    if (!attachment.id.trim() || !attachment.relativePath.trim()) throw new Error("첨부 식별자와 경로가 필요합니다.");
+    if (taskId !== undefined && !isUuid(taskId)) throw new Error("첨부 작업 ID가 올바르지 않습니다.");
+    this.db.prepare("INSERT OR REPLACE INTO attachments(id,task_id,kind,relative_path,metadata_json,created_at) VALUES(?,?,?,?,?,?)")
+      .run(attachment.id, taskId ?? null, attachment.kind, attachment.relativePath, JSON.stringify(attachment.metadata ?? {}), new Date().toISOString());
+  }
+
+  listAttachments(taskId: string): Array<{ id: string; kind: string; relativePath: string; metadata: Record<string, unknown> }> {
+    return (this.db.prepare("SELECT id,kind,relative_path,metadata_json FROM attachments WHERE task_id=? ORDER BY created_at").all(taskId) as Row[])
+      .map((row) => ({ id: row.id as string, kind: row.kind as string, relativePath: row.relative_path as string,
+        metadata: JSON.parse(row.metadata_json as string) as Record<string, unknown> }));
+  }
+
+  saveSettingsSnapshot(scope: "project" | "task", ownerId: string, settings: Record<string, unknown>, expectedRevision?: number): number {
+    if (!ownerId.trim()) throw new Error("설정 소유자가 필요합니다.");
+    const row = this.db.prepare("SELECT revision FROM settings_snapshots WHERE scope=? AND owner_id=?").get(scope, ownerId) as { revision: number } | undefined;
+    const revision = row?.revision ?? 0;
+    if (expectedRevision !== undefined && expectedRevision !== revision) throw new Error("E_REVISION_CONFLICT: 설정이 변경되었습니다.");
+    const now = new Date().toISOString();
+    if (!row) {
+      this.db.prepare("INSERT INTO settings_snapshots(id,scope,owner_id,revision,settings_json,created_at,updated_at) VALUES(?,?,?,?,?,?,?)")
+        .run(randomUUID(), scope, ownerId, 0, JSON.stringify(settings), now, now);
+      return 0;
+    }
+    this.db.prepare("UPDATE settings_snapshots SET revision=revision+1,settings_json=?,updated_at=? WHERE scope=? AND owner_id=? AND revision=?")
+      .run(JSON.stringify(settings), now, scope, ownerId, revision);
+    return revision + 1;
+  }
+
+  getSettingsSnapshot(scope: "project" | "task", ownerId: string): { revision: number; settings: Record<string, unknown> } | undefined {
+    const row = this.db.prepare("SELECT revision,settings_json FROM settings_snapshots WHERE scope=? AND owner_id=?").get(scope, ownerId) as Row | undefined;
+    return row ? { revision: row.revision as number, settings: JSON.parse(row.settings_json as string) as Record<string, unknown> } : undefined;
+  }
+
+  createInputRequest(taskId: string, payload: Record<string, unknown>, expiresAt?: string): string {
+    if (!isUuid(taskId)) throw new Error("입력 요청 작업 ID가 올바르지 않습니다.");
+    const id = randomUUID();
+    this.db.prepare("INSERT INTO input_requests(id,task_id,status,payload_json,expires_at,created_at) VALUES(?,?,'pending',?,?,?)")
+      .run(id, taskId, JSON.stringify(payload), expiresAt ?? null, new Date().toISOString());
+    this.appendEvent(taskId, "input.requested", { taskId, inputRequestId: id });
+    return id;
+  }
+
+  respondInputRequest(inputRequestId: string, response: Record<string, unknown>): { taskId: string; status: "answered" } {
+    return this.transaction(() => {
+      const row = this.db.prepare("SELECT task_id,status,expires_at FROM input_requests WHERE id=?").get(inputRequestId) as Row | undefined;
+      if (!row) throw new Error("입력 요청이 없습니다.");
+      if (row.status !== "pending") throw new Error("E_INPUT_CLOSED: 이미 처리된 입력 요청입니다.");
+      if (typeof row.expires_at === "string" && Date.parse(row.expires_at) <= Date.now()) {
+        this.db.prepare("UPDATE input_requests SET status='expired' WHERE id=? AND status='pending'").run(inputRequestId);
+        throw new Error("E_INPUT_EXPIRED: 입력 요청이 만료되었습니다.");
+      }
+      const taskId = row.task_id as string;
+      const changed = this.db.prepare("UPDATE input_requests SET status='answered',response_json=?,answered_at=? WHERE id=? AND status='pending'")
+        .run(JSON.stringify(response), new Date().toISOString(), inputRequestId);
+      if (changed.changes !== 1) throw new Error("E_INPUT_CLOSED: 다른 응답이 먼저 처리되었습니다.");
+      this.appendEvent(taskId, "input.answered", { taskId, inputRequestId });
+      return { taskId, status: "answered" as const };
+    });
+  }
+
+  listPendingInputRequests(taskId: string): Array<{ id: string; payload: Record<string, unknown>; expiresAt?: string }> {
+    const rows = this.db.prepare("SELECT id,payload_json,expires_at FROM input_requests WHERE task_id=? AND status='pending' ORDER BY created_at").all(taskId) as Row[];
+    return rows.map((row) => ({ id: row.id as string, payload: JSON.parse(row.payload_json as string) as Record<string, unknown>,
+      ...(typeof row.expires_at === "string" ? { expiresAt: row.expires_at } : {}) }));
+  }
+
+  saveIntegrationJournal(taskId: string, value: { repoKey: string; targetRef: string; expectedHead?: string; state: string; payload?: Record<string, unknown> }): void {
+    const now = new Date().toISOString();
+    this.db.prepare(`
+      INSERT INTO integration_journals(task_id,repo_key,target_ref,expected_head,state,payload_json,updated_at)
+      VALUES(?,?,?,?,?,?,?)
+      ON CONFLICT(task_id) DO UPDATE SET repo_key=excluded.repo_key,target_ref=excluded.target_ref,expected_head=excluded.expected_head,state=excluded.state,payload_json=excluded.payload_json,updated_at=excluded.updated_at
+    `).run(taskId, value.repoKey, value.targetRef, value.expectedHead ?? null, value.state, JSON.stringify(value.payload ?? {}), now);
+  }
+
+  getIntegrationJournal(taskId: string): Record<string, unknown> | undefined {
+    const row = this.db.prepare("SELECT repo_key,target_ref,expected_head,state,payload_json,updated_at FROM integration_journals WHERE task_id=?").get(taskId) as Row | undefined;
+    return row ? { repoKey: row.repo_key, targetRef: row.target_ref, expectedHead: row.expected_head, state: row.state,
+      payload: JSON.parse(row.payload_json as string), updatedAt: row.updated_at } : undefined;
+  }
+
+  recordProcess(taskId: string, value: { id: string; role: string; pid: number; startToken: string; state: "running" | "exited" | "unknown"; metadata?: Record<string, unknown> }): void {
+    this.db.prepare(`
+      INSERT INTO process_records(id,task_id,role,pid,start_token,state,metadata_json,updated_at)
+      VALUES(?,?,?,?,?,?,?,?)
+      ON CONFLICT(id) DO UPDATE SET state=excluded.state,metadata_json=excluded.metadata_json,updated_at=excluded.updated_at
+    `).run(value.id, taskId, value.role, value.pid, value.startToken, value.state, JSON.stringify(value.metadata ?? {}), new Date().toISOString());
+  }
+
+  saveArtifact(taskId: string, kind: string, location: string, metadata: Record<string, unknown> = {}): string {
+    const id = randomUUID();
+    this.db.prepare("INSERT INTO artifacts(id,task_id,kind,location,metadata_json,created_at) VALUES(?,?,?,?,?,?)")
+      .run(id, taskId, kind, location, JSON.stringify(metadata), new Date().toISOString());
+    return id;
+  }
+
   /** requestId 재사용을 payload 해시로 판별하며 상태·메시지·이벤트·operation을 원자적으로 저장한다. */
   applyQueueCommand(input: unknown): StoredResult {
     const command = parseQueueCommand(input);
@@ -341,6 +439,8 @@ export class StateStore {
         this.appendEvent(id, "task.changed", { taskId: id, revision: before.revision + 1, recovery: uncertain ? "unknown" : "paused" });
       }
       this.db.prepare("UPDATE operations SET state='unknown' WHERE state IN ('accepted','running')").run();
+      this.db.prepare("UPDATE process_records SET state='unknown',updated_at=? WHERE state='running'").run(new Date().toISOString());
+      this.db.prepare("UPDATE integration_journals SET state='unknown',updated_at=? WHERE state IN ('merging','pushing','pr_pending')").run(new Date().toISOString());
     });
   }
 

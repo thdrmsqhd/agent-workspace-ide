@@ -68,3 +68,70 @@ CREATE TABLE view_states (
 );
 CREATE UNIQUE INDEX view_task ON view_states(task_id) WHERE task_id IS NOT NULL;
 `;
+
+export const runtimeSchema = `
+CREATE TABLE attachments (
+  id TEXT PRIMARY KEY,
+  task_id TEXT REFERENCES tasks(id) ON DELETE RESTRICT,
+  kind TEXT NOT NULL CHECK (kind IN ('file','folder','image','code-selection')),
+  relative_path TEXT NOT NULL,
+  metadata_json TEXT NOT NULL CHECK (json_valid(metadata_json)),
+  created_at TEXT NOT NULL
+);
+CREATE INDEX attachments_task ON attachments(task_id, created_at);
+
+CREATE TABLE settings_snapshots (
+  id TEXT PRIMARY KEY,
+  scope TEXT NOT NULL CHECK (scope IN ('project','task')),
+  owner_id TEXT NOT NULL,
+  revision INTEGER NOT NULL DEFAULT 0 CHECK (revision >= 0),
+  settings_json TEXT NOT NULL CHECK (json_valid(settings_json)),
+  created_at TEXT NOT NULL,
+  updated_at TEXT NOT NULL,
+  UNIQUE(scope, owner_id)
+);
+
+CREATE TABLE input_requests (
+  id TEXT PRIMARY KEY,
+  task_id TEXT NOT NULL REFERENCES tasks(id) ON DELETE RESTRICT,
+  status TEXT NOT NULL CHECK (status IN ('pending','answered','expired','cancelled')),
+  payload_json TEXT NOT NULL CHECK (json_valid(payload_json)),
+  response_json TEXT CHECK (response_json IS NULL OR json_valid(response_json)),
+  expires_at TEXT,
+  created_at TEXT NOT NULL,
+  answered_at TEXT
+);
+CREATE INDEX input_requests_task_status ON input_requests(task_id, status);
+
+CREATE TABLE integration_journals (
+  task_id TEXT PRIMARY KEY REFERENCES tasks(id) ON DELETE RESTRICT,
+  repo_key TEXT NOT NULL,
+  target_ref TEXT NOT NULL,
+  expected_head TEXT,
+  state TEXT NOT NULL CHECK (state IN ('awaiting_approval','queued','preparing','conflicted','merging','merged','pushing','pr_pending','done','failed','unknown')),
+  payload_json TEXT NOT NULL CHECK (json_valid(payload_json)),
+  updated_at TEXT NOT NULL
+);
+
+CREATE TABLE process_records (
+  id TEXT PRIMARY KEY,
+  task_id TEXT NOT NULL REFERENCES tasks(id) ON DELETE RESTRICT,
+  role TEXT NOT NULL,
+  pid INTEGER NOT NULL CHECK (pid > 0),
+  start_token TEXT NOT NULL,
+  state TEXT NOT NULL CHECK (state IN ('running','exited','unknown')),
+  metadata_json TEXT NOT NULL CHECK (json_valid(metadata_json)),
+  updated_at TEXT NOT NULL
+);
+CREATE INDEX process_records_task_state ON process_records(task_id, state);
+
+CREATE TABLE artifacts (
+  id TEXT PRIMARY KEY,
+  task_id TEXT NOT NULL REFERENCES tasks(id) ON DELETE RESTRICT,
+  kind TEXT NOT NULL,
+  location TEXT NOT NULL,
+  metadata_json TEXT NOT NULL CHECK (json_valid(metadata_json)),
+  created_at TEXT NOT NULL
+);
+CREATE INDEX artifacts_task ON artifacts(task_id, created_at);
+`;

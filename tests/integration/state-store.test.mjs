@@ -126,7 +126,7 @@ test("기존 v1 DB를 변경하기 전에 온라인 백업하고 v2로 올린다
   store.createProject("원본", directory, "repo-key", "main");
   store.close();
   const old = new DatabaseSync(file);
-  old.exec("DROP TABLE view_states; DROP TABLE drafts; DELETE FROM schema_migrations WHERE id=2;");
+  old.exec("DROP TABLE view_states; DROP TABLE drafts; DROP TABLE attachments; DROP TABLE settings_snapshots; DROP TABLE input_requests; DROP TABLE integration_journals; DROP TABLE process_records; DROP TABLE artifacts; DELETE FROM schema_migrations WHERE id>=2;");
   old.close();
   const upgraded = await StateStore.open(file);
   const backups = (await readdir(directory)).filter((name) => name.startsWith("state-backup-") && name.endsWith(".sqlite"));
@@ -136,4 +136,33 @@ test("기존 v1 DB를 변경하기 전에 온라인 백업하고 v2로 올린다
   assert.equal(snapshot.prepare("SELECT COUNT(*) AS n FROM schema_migrations").get().n, 1);
   snapshot.close();
   upgraded.close();
+});
+
+test("첨부·설정·입력 요청·반영 저널·프로세스·artifact를 재시작 후 복원한다", async (t) => {
+  const { store, file, taskId, project } = await fixture(t);
+  store.saveAttachment(taskId, { id:"att-1", kind:"file", relativePath:"a.txt", metadata:{ size:3 } });
+  assert.equal(store.listAttachments(taskId)[0].relativePath, "a.txt");
+  assert.equal(store.saveSettingsSnapshot("project", project, { model:"m1" }), 0);
+  assert.equal(store.saveSettingsSnapshot("project", project, { model:"m2" }, 0), 1);
+  const input = store.createInputRequest(taskId, { prompt:"값?" });
+  assert.equal(store.listPendingInputRequests(taskId).length, 1);
+  assert.equal(store.respondInputRequest(input, { text:"답" }).status, "answered");
+  assert.throws(() => store.respondInputRequest(input, { text:"중복" }), /E_INPUT_CLOSED/);
+  store.saveIntegrationJournal(taskId, { repoKey:"repo", targetRef:"main", expectedHead:"abc", state:"queued", payload:{ action:"merge" } });
+  store.recordProcess(taskId, { id:"proc-1", role:"server", pid:1234, startToken:"boot:1", state:"exited" });
+  const artifactId = store.saveArtifact(taskId, "review", "reviews/1.json", { ok:true });
+  assert.ok(artifactId);
+  const reopened = await StateStore.open(file);
+  assert.equal(reopened.listAttachments(taskId).length, 1);
+  assert.equal(reopened.getSettingsSnapshot("project", project).settings.model, "m2");
+  assert.equal(reopened.listPendingInputRequests(taskId).length, 0);
+  assert.equal(reopened.getIntegrationJournal(taskId).state, "queued");
+  reopened.close();
+});
+
+test("만료된 입력 요청은 자동 승인하지 않고 expired로 닫는다", async (t) => {
+  const { store, taskId } = await fixture(t);
+  const input = store.createInputRequest(taskId, { prompt:"승인?" }, "2000-01-01T00:00:00.000Z");
+  assert.throws(() => store.respondInputRequest(input, { allow:true }), /E_INPUT_EXPIRED/);
+  assert.equal(store.listPendingInputRequests(taskId).length, 0);
 });
