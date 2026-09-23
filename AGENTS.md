@@ -2,7 +2,7 @@
 
 ## 시작
 
-이 저장소의 목적은 독립 Windows 에이전트 개발 IDE다. [문서 색인](docs/00-document-index.md)을 먼저 읽고 변경 영역의 계약을 따른다. 현재는 문서 및 기초 개발 환경 단계다. `packages/contracts`와 기초 검사·빌드만 존재한다. 실제 데스크톱 앱이나 OMP 연동이 존재한다고 가정하지 않는다.
+이 저장소의 목적은 독립 Windows 에이전트 개발 IDE다. [문서 색인](docs/00-document-index.md)을 먼저 읽고 변경 영역의 계약을 따른다. 현재는 문서, 공통 명령 봉투, 순수 큐 규칙 및 기초 검사 단계다. `packages/contracts`의 전체 CMD payload 검증, DB 영속성, 실제 데스크톱 앱이나 OMP 연동이 존재한다고 가정하지 않는다.
 
 ## 우선순위와 권위
 

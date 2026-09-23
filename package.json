@@ -14,9 +14,11 @@
   "scripts": {
     "docs:check": "node scripts/check-docs.mjs",
     "lint": "eslint .",
-    "typecheck": "tsc -p packages/contracts/tsconfig.json --noEmit",
+    "typecheck": "npm run build:foundation && tsc -p packages/core/tsconfig.json --noEmit",
     "build:foundation": "tsc -p packages/contracts/tsconfig.json",
-    "build": "npm run build:foundation",
+    "build:core": "tsc -p packages/core/tsconfig.json",
+    "build": "npm run build:foundation && npm run build:core",
+    "test:unit": "npm run build && node --test tests/unit/*.test.mjs",
     "dev": "node scripts/desktop-not-ready.mjs"
   },
   "devDependencies": {
