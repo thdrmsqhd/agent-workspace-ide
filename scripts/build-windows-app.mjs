@@ -1,0 +1,18 @@
+import { spawn } from "node:child_process";
+import process from "node:process";
+
+if (process.platform !== "win32") {
+  throw new Error("독립 데스크톱 앱 빌드는 Windows에서 실행해야 합니다.");
+}
+const cwd = new URL("../apps/desktop/", import.meta.url);
+async function run(command,args){
+  await new Promise((resolve,reject)=>{
+    const child=spawn(command,args,{cwd,stdio:"inherit",windowsHide:true,shell:false});
+    child.once("error",reject);
+    child.once("exit",(code)=>code===0?resolve():reject(new Error(`${command} ${args.join(" ")} 실패: ${code}`)));
+  });
+}
+await run("npm.cmd",["install","--ignore-scripts"]);
+await run("npm.cmd",["run","download:plugins"]);
+await run("npm.cmd",["run","rebuild"]);
+await run("npm.cmd",["run","build"]);

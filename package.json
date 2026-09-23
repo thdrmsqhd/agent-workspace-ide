@@ -41,7 +41,10 @@
     "build:recovery": "tsc -p packages/recovery/tsconfig.json",
     "build:performance": "tsc -p packages/performance/tsconfig.json",
     "perf:collect": "node scripts/perf-collect.mjs",
-    "build:environment": "tsc -p packages/environment/tsconfig.json"
+    "build:environment": "tsc -p packages/environment/tsconfig.json",
+    "desktop:build": "node scripts/build-windows-app.mjs",
+    "acceptance:summary": "node scripts/acceptance-summary.mjs",
+    "reuse:evaluate": "node scripts/reuse-evaluate.mjs"
   },
   "devDependencies": {
     "@eslint/js": "9.39.1",

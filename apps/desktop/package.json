@@ -1,0 +1,44 @@
+{
+  "name": "agent-workspace-ide-desktop",
+  "private": true,
+  "version": "0.1.0",
+  "description": "Agent Workspace IDE standalone Windows desktop shell",
+  "dependencies": {
+    "@theia/core": "1.75.0",
+    "@theia/editor": "1.75.0",
+    "@theia/electron": "1.75.0",
+    "@theia/filesystem": "1.75.0",
+    "@theia/markers": "1.75.0",
+    "@theia/messages": "1.75.0",
+    "@theia/monaco": "1.75.0",
+    "@theia/navigator": "1.75.0",
+    "@theia/plugin-ext": "1.75.0",
+    "@theia/plugin-ext-vscode": "1.75.0",
+    "@theia/preferences": "1.75.0",
+    "@theia/process": "1.75.0",
+    "@theia/terminal": "1.75.0",
+    "@theia/vsx-registry": "1.75.0",
+    "@theia/workspace": "1.75.0"
+  },
+  "devDependencies": {
+    "@theia/cli": "1.75.0",
+    "electron": "42.8.1"
+  },
+  "scripts": {
+    "rebuild": "theia rebuild:electron --cacheRoot ..",
+    "build": "theia build --mode production",
+    "download:plugins": "theia download:plugins",
+    "start": "theia start"
+  },
+  "theia": {
+    "target": "electron"
+  },
+  "theiaPluginsDir": "plugins",
+  "theiaPlugins": {
+    "redhat.java": "https://open-vsx.org/api/redhat/java/1.57.2026092308/file/redhat.java-1.57.2026092308.vsix",
+    "vscjava.vscode-java-debug": "https://open-vsx.org/api/vscjava/vscode-java-debug/0.59.0/file/vscjava.vscode-java-debug-0.59.0.vsix",
+    "ms-python.python": "https://open-vsx.org/api/ms-python/python/2026.4.0/file/ms-python.python-2026.4.0.vsix",
+    "ms-python.debugpy": "https://open-vsx.org/api/ms-python/debugpy/2026.6.0/file/ms-python.debugpy-2026.6.0.vsix",
+    "vscode-icons-team.vscode-icons": "https://open-vsx.org/api/vscode-icons-team/vscode-icons/12.19.0/file/vscode-icons-team.vscode-icons-12.19.0.vsix"
+  }
+}

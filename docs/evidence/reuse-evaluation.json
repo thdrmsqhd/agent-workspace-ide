@@ -1,0 +1,14 @@
+{
+  "candidate": "Pi Desktop / existing IDE candidate",
+  "thresholdPercent": 80,
+  "criteria": [
+    {"id":"workspace-shell","weight":15,"status":"not_measured"},
+    {"id":"multi-worktree","weight":15,"status":"not_measured"},
+    {"id":"java-python-language","weight":15,"status":"not_measured"},
+    {"id":"debugger","weight":15,"status":"not_measured"},
+    {"id":"terminal-git-search","weight":10,"status":"not_measured"},
+    {"id":"omp-session-control","weight":15,"status":"not_measured"},
+    {"id":"task-dashboard","weight":10,"status":"not_measured"},
+    {"id":"windows-packaging","weight":5,"status":"not_measured"}
+  ]
+}

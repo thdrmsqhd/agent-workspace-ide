@@ -172,3 +172,30 @@ export function openExternalUrl(url: string): void {
   const child = spawn(command, args, { detached: true, stdio: "ignore", windowsHide: true });
   child.unref();
 }
+
+export interface ExtensionManifest {
+  readonly id: string;
+  readonly version: string;
+  readonly source: string;
+}
+export class GlobalExtensionRegistry {
+  readonly #installed = new Map<string, ExtensionManifest>();
+
+  install(manifest: ExtensionManifest, activeTaskCount = 0): void {
+    if (!manifest.id.trim() || !manifest.version.trim() || !manifest.source.trim()) throw new Error("확장 ID·버전·출처가 필요합니다.");
+    const previous = this.#installed.get(manifest.id);
+    if (previous && previous.version !== manifest.version && activeTaskCount > 0) {
+      throw new Error("실행 작업이 있는 동안 전역 확장 업데이트로 호스트를 재시작할 수 없습니다.");
+    }
+    this.#installed.set(manifest.id, { ...manifest });
+  }
+
+  list(): ExtensionManifest[] {
+    return [...this.#installed.values()].map((item) => ({ ...item })).sort((a,b) => a.id.localeCompare(b.id));
+  }
+
+  forProject(_projectId: string): ExtensionManifest[] {
+    // 첫 버전은 프로젝트별 비활성화를 제공하지 않고 앱 전체에 같은 확장 세트를 적용한다.
+    return this.list();
+  }
+}
