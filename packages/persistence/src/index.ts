@@ -373,21 +373,25 @@ export class StateStore {
   }
 
   respondInputRequest(inputRequestId: string, response: Record<string, unknown>): { taskId: string; status: "answered" } {
-    return this.transaction(() => {
+    const outcome = this.transaction(() => {
       const row = this.db.prepare("SELECT task_id,status,expires_at FROM input_requests WHERE id=?").get(inputRequestId) as Row | undefined;
       if (!row) throw new Error("입력 요청이 없습니다.");
       if (row.status !== "pending") throw new Error("E_INPUT_CLOSED: 이미 처리된 입력 요청입니다.");
-      if (typeof row.expires_at === "string" && Date.parse(row.expires_at) <= Date.now()) {
-        this.db.prepare("UPDATE input_requests SET status='expired' WHERE id=? AND status='pending'").run(inputRequestId);
-        throw new Error("E_INPUT_EXPIRED: 입력 요청이 만료되었습니다.");
-      }
       const taskId = row.task_id as string;
+      if (typeof row.expires_at === "string" && Date.parse(row.expires_at) <= Date.now()) {
+        const changed = this.db.prepare("UPDATE input_requests SET status='expired' WHERE id=? AND status='pending'").run(inputRequestId);
+        if (changed.changes !== 1) throw new Error("E_INPUT_CLOSED: 다른 응답이 먼저 처리되었습니다.");
+        this.appendEvent(taskId, "input.expired", { taskId, inputRequestId });
+        return { kind: "expired" as const, taskId };
+      }
       const changed = this.db.prepare("UPDATE input_requests SET status='answered',response_json=?,answered_at=? WHERE id=? AND status='pending'")
         .run(JSON.stringify(response), new Date().toISOString(), inputRequestId);
       if (changed.changes !== 1) throw new Error("E_INPUT_CLOSED: 다른 응답이 먼저 처리되었습니다.");
       this.appendEvent(taskId, "input.answered", { taskId, inputRequestId });
-      return { taskId, status: "answered" as const };
+      return { kind: "answered" as const, taskId };
     });
+    if (outcome.kind === "expired") throw new Error("E_INPUT_EXPIRED: 입력 요청이 만료되었습니다.");
+    return { taskId: outcome.taskId, status: "answered" };
   }
 
   listPendingInputRequests(taskId: string): Array<{ id: string; payload: Record<string, unknown>; expiresAt?: string }> {
