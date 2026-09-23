@@ -57,6 +57,8 @@
 
 프레임 계약 실측: 물리 한 줄 1,048,576바이트, 재조립 논리 프레임 67,108,864바이트, 청크 페이로드 262,144바이트. `ready`는 `protocolVersion=1`, `supportedProtocolVersions=[1,2]`를 광고하고 v2에서만 청크를 보낸다. 실패 응답에는 `id`가 없을 수 있다. `bash` 출력은 768바이트로 절단된다.
 
+검증 하네스와 증거를 포함한 커밋의 [GitHub Actions 기초 CI](https://github.com/thdrmsqhd/agent-workspace-ide/actions/runs/35876398633)에서 Ubuntu(48초)·Windows(1분 35초) 작업이 모두 통과했다. CI는 문서 검사·lint·typecheck·build·단위·통합 검사만 수행하며 `verify:omp:*`는 실행하지 않는다.
+
 ## 남은 확인
 
 - 최종 IDE 기반 후보와 버전 고정은 TV-001/002 실행 후 결정한다. 이 PC의 VS Code·확장 버전은 기준 구성의 참고값이며 대체가 아니다.
