@@ -11,10 +11,12 @@ const errors = [];
 const documents = new Map();
 
 async function collect(directory) {
+  const skipped = new Set(["node_modules", "dist", "plugins", "lib", "src-gen"]);
   for (const entry of await readdir(directory, { withFileTypes: true })) {
     const path = join(directory, entry.name);
     if (entry.isDirectory()) {
-      if (entry.name !== "node_modules" && entry.name !== "dist") await collect(path);
+      // plugins·lib·src-gen은 내려받은 확장과 빌드 산출물이라 문서 검사 대상이 아니다.
+      if (!skipped.has(entry.name)) await collect(path);
     } else if (entry.isFile() && path.endsWith(".md")) {
       documents.set(relative(root, path).split(sep).join("/"), await readFile(path, "utf8"));
     }

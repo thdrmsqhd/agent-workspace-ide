@@ -1,0 +1,43 @@
+{
+  "scenario": "tv-001",
+  "verificationId": "TV-001",
+  "hostRoot": "C:\\Users\\gbsong\\source\\repos\\agent-workspace-ide\\apps\\ide-verification-host",
+  "probeWorkspace": "C:\\Users\\gbsong\\AppData\\Local\\Temp\\awi-theia-hostboot-2026-09-23T16-15-35-773Z",
+  "backendPort": 3000,
+  "debugPort": 9222,
+  "criteria": [
+    {
+      "id": "backend-serving",
+      "pass": true,
+      "detail": "프론트엔드 HTTP 응답 정상 (기존 실행=false)"
+    },
+    {
+      "id": "workbench-shell",
+      "pass": true,
+      "detail": "Theia 앱 셸 DOM 확인"
+    },
+    {
+      "id": "explorer-lists-projects",
+      "pass": false,
+      "detail": "탐색기 항목 미확인"
+    },
+    {
+      "id": "screenshot-captured",
+      "pass": true,
+      "detail": "C:\\Users\\gbsong\\source\\repos\\agent-workspace-ide\\docs\\evidence\\TV-001\\raw\\workbench.png"
+    }
+  ],
+  "backendAlreadyRunning": false,
+  "deployedPlugins": 6,
+  "browserTarget": {
+    "url": "http://127.0.0.1:3000/#/c:/Users/gbsong/AppData/Local/Temp/awi-theia-tv001-2026-09-23T16-01-43-717Z",
+    "title": "awi-theia-tv001-2026-09-23T16-01-43-717Z - Eclipse Theia"
+  },
+  "workspaceUrl": "http://127.0.0.1:3000/#/C:/Users/gbsong/AppData/Local/Temp/awi-theia-hostboot-2026-09-23T16-15-35-773Z",
+  "trustDialogClicked": false,
+  "browserShowsExtensionHint": true,
+  "screenshot": "C:\\Users\\gbsong\\source\\repos\\agent-workspace-ide\\docs\\evidence\\TV-001\\raw\\workbench.png",
+  "consoleErrors": [],
+  "pageTitle": "awi-theia-tv001-2026-09-23T16-01-43-717Z - Eclipse Theia",
+  "pass": false
+}
