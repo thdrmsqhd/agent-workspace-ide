@@ -17,6 +17,7 @@ export function createIdeProbeWorkspace(name) {
   writePythonProject(pythonProject);
   writeGitProject(gitProject, root);
   writeFileSync(join(root, "icon.svg"), SVG_ICON);
+  writeWorkspaceSettings(root);
   writeFileSync(
     join(root, "probe.json"),
     `${JSON.stringify({ root, javaProject, pythonProject, gitProject, worktrees: [join(root, "worktree-a"), join(root, "worktree-b")] }, null, 2)}\n`,
@@ -136,6 +137,25 @@ function writeGitProject(project, root) {
 function run(cwd, args) {
   execFileSync("git", args, { cwd, stdio: "ignore", windowsHide: true });
 }
+
+/** 작업대 설정: 워크스페이스 신뢰를 끄고 Java 확장에 JDK 21을 알려준다. */
+function writeWorkspaceSettings(root) {
+  const settings = {
+    "security.workspace.trust.enabled": false,
+    "java.jdt.ls.java.home": JAVA_HOME.replace(/\\/gu, "/"),
+    "java.configuration.runtimes": [{ name: "JavaSE-21", path: JAVA_HOME.replace(/\\/gu, "/"), default: true }],
+    "java.import.maven.enabled": true,
+    "files.autoSave": "off",
+    "telemetry.telemetryLevel": "off",
+  };
+  const body = `${JSON.stringify(settings, null, 2)}\n`;
+  mkdirSync(join(root, ".theia"), { recursive: true });
+  mkdirSync(join(root, ".vscode"), { recursive: true });
+  writeFileSync(join(root, ".theia", "settings.json"), body);
+  writeFileSync(join(root, ".vscode", "settings.json"), body);
+}
+
+const JAVA_HOME = join(homedir(), ".jdks", "jdk-21.0.12.1+1");
 
 export function javaHome() {
   const candidate = join(homedir(), ".jdks", "jdk-21.0.12.1+1");

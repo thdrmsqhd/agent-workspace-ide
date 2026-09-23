@@ -2,9 +2,9 @@
   "scenario": "tv-001",
   "verificationId": "TV-001",
   "hostRoot": "C:\\Users\\gbsong\\source\\repos\\agent-workspace-ide\\apps\\ide-verification-host",
-  "probeWorkspace": "C:\\Users\\gbsong\\AppData\\Local\\Temp\\awi-theia-hostboot-2026-09-23T16-15-35-773Z",
-  "backendPort": 3000,
-  "debugPort": 9222,
+  "probeWorkspace": "C:\\Users\\gbsong\\AppData\\Local\\Temp\\awi-theia-hostboot-2026-09-23T17-52-02-426Z",
+  "backendPort": 3180,
+  "debugPort": 9480,
   "criteria": [
     {
       "id": "backend-serving",
@@ -17,9 +17,14 @@
       "detail": "Theia 앱 셸 DOM 확인"
     },
     {
+      "id": "workspace-opened",
+      "pass": true,
+      "detail": "창 제목에 검증 작업대 이름 포함=true"
+    },
+    {
       "id": "explorer-lists-projects",
-      "pass": false,
-      "detail": "탐색기 항목 미확인"
+      "pass": true,
+      "detail": "탐색기 항목: .theia, .vscode, git-project, java-project, python-project, worktree-a, worktree-b, icon.svg, probe.json"
     },
     {
       "id": "screenshot-captured",
@@ -30,14 +35,26 @@
   "backendAlreadyRunning": false,
   "deployedPlugins": 6,
   "browserTarget": {
-    "url": "http://127.0.0.1:3000/#/c:/Users/gbsong/AppData/Local/Temp/awi-theia-tv001-2026-09-23T16-01-43-717Z",
-    "title": "awi-theia-tv001-2026-09-23T16-01-43-717Z - Eclipse Theia"
+    "url": "http://127.0.0.1:3180/",
+    "title": "Eclipse Theia"
   },
-  "workspaceUrl": "http://127.0.0.1:3000/#/C:/Users/gbsong/AppData/Local/Temp/awi-theia-hostboot-2026-09-23T16-15-35-773Z",
+  "workspaceUrl": "http://127.0.0.1:3180/#/C:/Users/gbsong/AppData/Local/Temp/awi-theia-hostboot-2026-09-23T17-52-02-426Z",
   "trustDialogClicked": false,
+  "restrictedMode": false,
+  "explorerEntries": [
+    ".theia",
+    ".vscode",
+    "git-project",
+    "java-project",
+    "python-project",
+    "worktree-a",
+    "worktree-b",
+    "icon.svg",
+    "probe.json"
+  ],
   "browserShowsExtensionHint": true,
   "screenshot": "C:\\Users\\gbsong\\source\\repos\\agent-workspace-ide\\docs\\evidence\\TV-001\\raw\\workbench.png",
   "consoleErrors": [],
-  "pageTitle": "awi-theia-tv001-2026-09-23T16-01-43-717Z - Eclipse Theia",
-  "pass": false
+  "pageTitle": "awi-theia-hostboot-2026-09-23T17-52-02-426Z - Eclipse Theia",
+  "pass": true
 }
