@@ -3,12 +3,12 @@ import assert from "node:assert/strict";
 import { mkdtemp, stat, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { fileURLToPath } from "node:url";
+import process from "node:process";
+import { setTimeout as sleep } from "node:timers/promises";
+import { fileURLToPath, URL } from "node:url";
 import { ProcessTreeSupervisor } from "@awi/processes";
 
 const fixture = fileURLToPath(new URL("../fixtures/process-tree.mjs", import.meta.url));
-
-const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
 async function size(path) {
   try {
@@ -63,7 +63,6 @@ test("작업별 프로세스 트리 종료는 자손을 멈추고 다른 작업�
   assert.equal(stopped.length, 1);
   assert.equal(supervisor.list("task-a")[0].state, "exited");
 
-  // 종료 직후 남아 있을 수 있는 마지막 동기식 append를 흘려보낸 다음 안정성을 본다.
   await sleep(150);
   const aRootStoppedAt = await size(aRoot);
   const aChildStoppedAt = await size(aChild);

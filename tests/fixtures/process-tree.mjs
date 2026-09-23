@@ -1,5 +1,7 @@
 import { appendFileSync } from "node:fs";
 import { spawn } from "node:child_process";
+import process from "node:process";
+import { setInterval } from "node:timers";
 
 const [rootHeartbeat, childHeartbeat] = process.argv.slice(2);
 if (!rootHeartbeat || !childHeartbeat) throw new Error("heartbeat 경로 2개가 필요합니다.");
