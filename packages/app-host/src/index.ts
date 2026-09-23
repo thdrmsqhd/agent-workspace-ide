@@ -74,7 +74,8 @@ export class ApplicationController {
   archiveTask(taskId:string):void{this.runtime.archiveTask(taskId);}
   updateQueued(taskId:string,messageId:string,revision:number,text:string):void{this.runtime.updateQueued(taskId,messageId,revision,text);}
   deleteQueued(taskId:string,messageId:string,revision:number):void{this.runtime.deleteQueued(taskId,messageId,revision);}
-  async respondInput(_taskId:string,inputRequestId:string,response:string|boolean):Promise<void>{
+  async respondInput(taskId:string,inputRequestId:string,response:string|boolean):Promise<void>{
+    if(!taskId.trim()) throw new Error("작업 ID가 필요합니다.");
     await this.runtime.respondInput(inputRequestId,typeof response==="boolean"?{confirmed:response}:{value:response});
   }
   async addAttachment(taskId:string,kind:"file"|"folder"|"image",relativePath:string):Promise<string>{
