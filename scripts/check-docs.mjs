@@ -16,7 +16,7 @@ async function collect(directory) {
     if (entry.isDirectory()) {
       if (entry.name !== "node_modules" && entry.name !== "dist") await collect(path);
     } else if (entry.isFile() && path.endsWith(".md")) {
-      documents.set(relative(root, path), await readFile(path, "utf8"));
+      documents.set(relative(root, path).split(sep).join("/"), await readFile(path, "utf8"));
     }
   }
 }
@@ -50,7 +50,7 @@ for (const [name, content] of documents) {
     if (!target || /^[a-z]+:\/\//iu.test(target) || target.startsWith("mailto:")) continue;
     const file = resolve(root, dirname(name), target);
     if (!file.startsWith(root + sep)) { errors.push(`${name}: 저장소 밖 링크 ${target}`); continue; }
-    const relativeTarget = relative(root, file);
+    const relativeTarget = relative(root, file).split(sep).join("/");
     if (!documents.has(relativeTarget)) errors.push(`${name}: 없는 문서 링크 ${target}`);
   }
 }
