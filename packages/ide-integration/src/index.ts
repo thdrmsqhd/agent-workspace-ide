@@ -194,7 +194,8 @@ export class GlobalExtensionRegistry {
     return [...this.#installed.values()].map((item) => ({ ...item })).sort((a,b) => a.id.localeCompare(b.id));
   }
 
-  forProject(_projectId: string): ExtensionManifest[] {
+  forProject(projectId: string): ExtensionManifest[] {
+    if (!projectId.trim()) throw new Error("프로젝트 ID가 필요합니다.");
     // 첫 버전은 프로젝트별 비활성화를 제공하지 않고 앱 전체에 같은 확장 세트를 적용한다.
     return this.list();
   }
