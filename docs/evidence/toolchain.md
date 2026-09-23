@@ -23,4 +23,4 @@
 
 ## 독립 규칙 구현 결과
 
-2026-09-23 클린 설치 후 Linux에서 `npm run docs:check`, `npm run lint`, `npm run typecheck`, `npm run test:unit`을 실행하여 모두 통과했다. 단위 검사 6건은 CMD-06~10 입력, 대기열 수정·삭제 경쟁, Esc 중단과 대기열 정지, 불명 결과 재전송 방지, 12개 실행 슬롯을 다룬다. 이 검사는 순수 함수의 동작만 확인하며 DB 트랜잭션·실제 에이전트/IDE·동시 12개 프로세스 검증은 아니다. 새 코어 포함 CI 결과는 별도로 확인한다.
+2026-09-23 클린 설치 후 Linux에서 `npm run docs:check`, `npm run lint`, `npm run typecheck`, `npm run test:unit`을 실행하여 모두 통과했다. 단위 검사 6건은 CMD-06~10 입력, 대기열 수정·삭제 경쟁, Esc 중단과 대기열 정지, 불명 결과 재전송 방지, 12개 실행 슬롯을 다룬다. [새 코어 포함 GitHub Actions](https://github.com/thdrmsqhd/agent-workspace-ide/actions/runs/35815021871)에서도 Ubuntu·Windows 작업이 모두 통과했다. 이 검사는 순수 함수의 동작만 확인하며 DB 트랜잭션·실제 에이전트/IDE·동시 12개 프로세스 검증은 아니다.

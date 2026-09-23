@@ -43,7 +43,7 @@ TypeScript strict, 경계 입력 스키마 검증, public contract는 packages/c
 
 ## 5. CI 계획
 
-현재 기초 CI: Ubuntu/Windows에서 npm ci → docs:check → lint → typecheck → 계약·순수 코어 build → unit. 이전 계약 전용 CI는 양쪽 통과했고 새 코어 포함 CI 결과는 [실행 증거](evidence/toolchain.md)에 따로 기록한다. 최종 PR CI: docs:check → lint/typecheck → unit → integration → build. Windows 영향 변경은 Windows runner에서 추가 실행한다. 실제 모델·비용이 있는 시험은 승인된 별도 job으로 분리하고 모의 시험과 구분한다.
+현재 기초 CI: Ubuntu/Windows에서 npm ci → docs:check → lint → typecheck → 계약·순수 코어 build → unit. 코어 포함 CI가 두 운영체제에서 통과했다([실행 증거](evidence/toolchain.md)). 최종 PR CI: docs:check → lint/typecheck → unit → integration → build. Windows 영향 변경은 Windows runner에서 추가 실행한다. 실제 모델·비용이 있는 시험은 승인된 별도 job으로 분리하고 모의 시험과 구분한다.
 
 main에 푸시했다고 자동 공개 릴리스하지 않는다. 첫 버전 릴리스는 명시적 태그/수동 workflow로 시작한다. 현재 기초 CI 외 제품 검증·패키징 자동화는 설치하지 않았다.
 
