@@ -1,0 +1,44 @@
+import { test } from "node:test";
+import assert from "node:assert/strict";
+import { Buffer } from "node:buffer";
+import { execFile } from "node:child_process";
+import { randomUUID } from "node:crypto";
+import { mkdtemp, mkdir, readFile, rm, writeFile } from "node:fs/promises";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
+import { promisify } from "node:util";
+import { prepareWorktree } from "@awi/worktrees";
+import { applySelectedChanges, previewChanges } from "@awi/worktrees/import";
+
+const git = promisify(execFile);
+
+test("원본의 staged·unstaged·미추적·삭제·rename·바이너리를 선택해 새 워크트리로 복사한다", async (t) => {
+  const directory = await mkdtemp(join(tmpdir(), "awi-import-"));
+  t.after(() => rm(directory, { recursive: true, force: true }));
+  const repoPath = join(directory, "source");
+  await mkdir(repoPath);
+  await git("git", ["init", "-b", "main"], { cwd: repoPath });
+  await writeFile(join(repoPath, "keep.txt"), "원본");
+  await writeFile(join(repoPath, "delete.txt"), "삭제 전");
+  await writeFile(join(repoPath, "rename.txt"), "이름 전");
+  await git("git", ["add", "."], { cwd: repoPath });
+  await git("git", ["-c", "user.name=Test", "-c", "user.email=test@example.invalid", "commit", "-m", "base"], { cwd: repoPath });
+  await writeFile(join(repoPath, "keep.txt"), "변경 뒤");
+  await rm(join(repoPath, "delete.txt"));
+  await git("git", ["mv", "rename.txt", "moved.txt"], { cwd: repoPath });
+  await writeFile(join(repoPath, "binary.dat"), Buffer.from([0, 255, 10, 13]));
+  const preview = await previewChanges(repoPath);
+  assert.deepEqual(preview.files.map((file) => file.kind).sort(), ["added", "deleted", "modified", "renamed"]);
+  const target = await prepareWorktree({ repoPath, taskId: randomUUID(), baseRef: "main", worktreeRoot: join(directory, "worktrees"), journalDirectory: join(directory, "journals") });
+  await writeFile(join(repoPath, "keep.txt"), "원본이 바뀜");
+  await assert.rejects(applySelectedChanges(preview, preview.files.map((file) => file.id), target.worktreePath), /다시 확인/);
+  assert.equal(await readFile(join(target.worktreePath, "keep.txt"), "utf8"), "원본");
+  await writeFile(join(repoPath, "keep.txt"), "변경 뒤");
+  const fresh = await previewChanges(repoPath);
+  await applySelectedChanges(fresh, fresh.files.map((file) => file.id), target.worktreePath);
+  assert.equal(await readFile(join(target.worktreePath, "keep.txt"), "utf8"), "변경 뒤");
+  assert.equal(await readFile(join(target.worktreePath, "moved.txt"), "utf8"), "이름 전");
+  assert.deepEqual(await readFile(join(target.worktreePath, "binary.dat")), Buffer.from([0, 255, 10, 13]));
+  await assert.rejects(readFile(join(target.worktreePath, "delete.txt")), /ENOENT/);
+  assert.equal(await readFile(join(repoPath, "keep.txt"), "utf8"), "변경 뒤");
+});

@@ -1,0 +1,26 @@
+.awi-shell { display: flex; flex-direction: column; height: 100%; min-width: 0; background: #151a24; color: #edf2fa; font: 14px/1.5 system-ui, sans-serif; }
+.awi-shell * { box-sizing: border-box; }
+.awi-top { display: flex; align-items: center; gap: 10px; min-height: 66px; padding: 10px 16px; border-bottom: 1px solid #364051; }
+.awi-top select { flex: 0 0 200px; }
+.awi-top textarea { flex: 1; min-width: 0; height: 42px; resize: vertical; }
+.awi-shell select, .awi-shell textarea, .awi-button { border: 1px solid #49566c; border-radius: 6px; background: #222b3b; color: inherit; padding: 7px 10px; font: inherit; }
+.awi-button { cursor: pointer; text-align: left; }
+.awi-button:hover, .awi-button:focus-visible { border-color: #8bb7ed; background: #2d3c52; }
+.awi-body { display: flex; flex: 1; min-height: 0; }
+.awi-files, .awi-sessions { display: flex; flex-direction: column; gap: 8px; overflow: auto; padding: 10px; background: #1c2432; }
+.awi-files { flex: 0 0 240px; border-right: 1px solid #364051; }
+.awi-sessions { flex: 0 0 300px; border-left: 1px solid #364051; }
+.awi-files.awi-collapsed, .awi-sessions.awi-collapsed { flex-basis: 44px; overflow: hidden; }
+.awi-center { flex: 1; min-width: 0; overflow: auto; padding: 0 18px 18px; }
+.awi-tabs { position: sticky; top: 0; display: flex; align-items: center; gap: 6px; min-height: 52px; overflow-x: auto; background: #151a24; border-bottom: 1px solid #364051; }
+.awi-tab { display: inline-flex; gap: 2px; white-space: nowrap; }
+.awi-project-cards { max-width: 900px; margin: 20px auto; }
+.awi-card { margin: 8px 0; padding: 14px 18px; border: 1px solid #43516a; border-radius: 10px; background: #222c3d; }
+.awi-original-request { white-space: pre-wrap; overflow-wrap: anywhere; }
+.awi-conversation { max-width: 900px; margin: 20px auto; }
+.awi-task-prompt { display: block; width: 100%; min-height: 92px; margin: 24px 0 8px; }
+.awi-session-group { display: flex; flex-direction: column; gap: 4px; border-bottom: 1px solid #364051; padding-bottom: 10px; }
+.awi-session-group .awi-button { overflow-wrap: anywhere; }
+.awi-file-list { margin: 0; padding: 0; list-style: none; }
+.awi-file-list .awi-button { width: 100%; }
+@media (max-width: 1100px) { .awi-files { flex-basis: 44px; overflow: hidden; } .awi-sessions { flex-basis: 240px; } }

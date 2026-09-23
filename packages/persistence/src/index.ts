@@ -2,15 +2,32 @@ import { createHash, randomUUID } from "node:crypto";
 import { mkdir, stat } from "node:fs/promises";
 import { dirname, join } from "node:path";
 import { backup, DatabaseSync } from "node:sqlite";
-import { parseQueueCommand, type QueueCommand } from "@awi/contracts";
+import { isUuid, parseQueueCommand, type QueueCommand } from "@awi/contracts";
 import {
   abort, claimNext, confirmStopped, deleteQueued, enqueue, markUnknown,
   resume, updateQueued, type QueuedMessage, type TaskQueue,
 } from "@awi/core";
-import { initialSchema } from "./schema.js";
+import { initialSchema, viewSchema } from "./schema.js";
 
 type Row = Record<string, unknown>;
 type StoredResult = { operationId: string; task: TaskQueue; messageId?: string };
+
+export interface SavedDraft {
+  scope: "project" | "task";
+  ownerId: string;
+  text: string;
+  attachmentIds: string[];
+  revision: number;
+}
+
+export interface SavedView {
+  taskId?: string;
+  layout: Record<string, unknown>;
+  tabs: unknown[];
+  cursors: unknown[];
+  scroll: Record<string, unknown>;
+  revision: number;
+}
 
 function digest(input: string): string {
   return createHash("sha256").update(input).digest("hex");
@@ -56,23 +73,29 @@ export class StateStore {
     const migrationTable = this.db.prepare("SELECT name FROM sqlite_master WHERE type='table' AND name='schema_migrations'").get();
     const otherTables = this.db.prepare("SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%' AND name <> 'schema_migrations'").all();
     if (!migrationTable && otherTables.length) throw new Error("알 수 없는 기존 DB 스키마입니다. 원본을 보존하고 수동으로 확인해 주세요.");
-    const checksum = digest(initialSchema);
+    const migrations = [initialSchema, viewSchema];
+    let applied = 0;
     if (migrationTable) {
       const rows = this.db.prepare("SELECT id, checksum FROM schema_migrations ORDER BY id").all() as { id: number; checksum: string }[];
-      if (rows.length !== 1 || rows[0]?.id !== 1 || rows[0]?.checksum !== checksum) {
-        throw new Error("지원하지 않거나 변경된 DB 마이그레이션입니다. 원본 DB를 보존했습니다.");
+      for (const [index, row] of rows.entries()) {
+        if (index >= migrations.length || row.id !== index + 1 || row.checksum !== digest(migrations[index]!)) {
+          throw new Error("지원하지 않거나 변경된 DB 마이그레이션입니다. 원본 DB를 보존했습니다.");
+        }
       }
-      return;
+      applied = rows.length;
     }
-    if (existed && otherTables.length) await this.backupSnapshot();
-    this.db.exec("BEGIN IMMEDIATE");
-    try {
-      this.db.exec(initialSchema);
-      this.db.prepare("INSERT INTO schema_migrations(id,checksum,applied_at) VALUES(1,?,?)").run(checksum, new Date().toISOString());
-      this.db.exec("COMMIT");
-    } catch (error) {
-      this.db.exec("ROLLBACK");
-      throw error;
+    if (existed && applied > 0 && applied < migrations.length) await this.backupSnapshot();
+    for (let index = applied; index < migrations.length; index++) {
+      this.db.exec("BEGIN IMMEDIATE");
+      try {
+        this.db.exec(migrations[index]!);
+        this.db.prepare("INSERT INTO schema_migrations(id,checksum,applied_at) VALUES(?,?,?)")
+          .run(index + 1, digest(migrations[index]!), new Date().toISOString());
+        this.db.exec("COMMIT");
+      } catch (error) {
+        this.db.exec("ROLLBACK");
+        throw error;
+      }
     }
   }
 
@@ -141,6 +164,65 @@ export class StateStore {
         revision: item.revision as number, state: item.queue_state as QueuedMessage["state"],
       })),
     };
+  }
+
+  getDraft(scope: "project" | "task", ownerId: string): SavedDraft | undefined {
+    const key = scope === "project" ? "project_id" : "task_id";
+    const row = this.db.prepare(`SELECT text,attachment_ids_json,revision FROM drafts WHERE scope=? AND ${key}=?`).get(scope, ownerId) as Row | undefined;
+    if (!row) return undefined;
+    return { scope, ownerId, text: row.text as string,
+      attachmentIds: JSON.parse(row.attachment_ids_json as string) as string[], revision: row.revision as number };
+  }
+
+  saveDraft(draft: SavedDraft, expectedRevision: number): SavedDraft {
+    if (!isUuid(draft.ownerId) || !draft.attachmentIds.every(isUuid)) throw new Error("초안 참조 ID가 올바르지 않습니다.");
+    return this.transaction(() => {
+      const before = this.getDraft(draft.scope, draft.ownerId);
+      if ((before?.revision ?? 0) !== expectedRevision) throw new Error("E_REVISION_CONFLICT: 초안이 변경되었습니다.");
+      const key = draft.scope === "project" ? "project_id" : "task_id";
+      const value = JSON.stringify(draft.attachmentIds);
+      if (before) {
+        const updated = this.db.prepare(`UPDATE drafts SET text=?,attachment_ids_json=?,revision=revision+1 WHERE scope=? AND ${key}=? AND revision=?`)
+          .run(draft.text, value, draft.scope, draft.ownerId, expectedRevision);
+        if (updated.changes !== 1) throw new Error("E_REVISION_CONFLICT: 초안이 변경되었습니다.");
+      } else {
+        this.db.prepare(`INSERT INTO drafts(id,scope,${key},text,attachment_ids_json) VALUES(?,?,?,?,?)`)
+          .run(randomUUID(), draft.scope, draft.ownerId, draft.text, value);
+      }
+      return this.getDraft(draft.scope, draft.ownerId)!;
+    });
+  }
+
+  getView(taskId?: string): SavedView | undefined {
+    const id = taskId ?? "global";
+    const row = this.db.prepare("SELECT layout_json,tabs_json,cursors_json,scroll_json,revision FROM view_states WHERE id=?").get(id) as Row | undefined;
+    if (!row) return undefined;
+    return { ...(taskId ? { taskId } : {}), layout: JSON.parse(row.layout_json as string) as Record<string, unknown>,
+      tabs: JSON.parse(row.tabs_json as string) as unknown[], cursors: JSON.parse(row.cursors_json as string) as unknown[],
+      scroll: JSON.parse(row.scroll_json as string) as Record<string, unknown>, revision: row.revision as number };
+  }
+
+  saveView(view: SavedView, expectedRevision: number): SavedView {
+    if (view.taskId !== undefined && !isUuid(view.taskId)) throw new Error("보기 작업 ID가 올바르지 않습니다.");
+    if (!view.layout || typeof view.layout !== "object" || Array.isArray(view.layout) ||
+        !view.scroll || typeof view.scroll !== "object" || Array.isArray(view.scroll) ||
+        !Array.isArray(view.tabs) || !Array.isArray(view.cursors)) throw new Error("보기 형식이 올바르지 않습니다.");
+    return this.transaction(() => {
+      const before = this.getView(view.taskId);
+      if ((before?.revision ?? 0) !== expectedRevision) throw new Error("E_REVISION_CONFLICT: 화면 상태가 변경되었습니다.");
+      const id = view.taskId ?? "global";
+      const values = [JSON.stringify(view.layout), JSON.stringify(view.tabs), JSON.stringify(view.cursors), JSON.stringify(view.scroll)];
+      if (values.some((value) => value === undefined)) throw new Error("보기 값을 저장할 수 없습니다.");
+      if (before) {
+        const updated = this.db.prepare("UPDATE view_states SET layout_json=?,tabs_json=?,cursors_json=?,scroll_json=?,revision=revision+1,updated_at=? WHERE id=? AND revision=?")
+          .run(...values, new Date().toISOString(), id, expectedRevision);
+        if (updated.changes !== 1) throw new Error("E_REVISION_CONFLICT: 화면 상태가 변경되었습니다.");
+      } else {
+        this.db.prepare("INSERT INTO view_states(id,task_id,layout_json,tabs_json,cursors_json,scroll_json,updated_at) VALUES(?,?,?,?,?,?,?)")
+          .run(id, view.taskId ?? null, ...values, new Date().toISOString());
+      }
+      return this.getView(view.taskId)!;
+    });
   }
 
   /** requestId 재사용을 payload 해시로 판별하며 상태·메시지·이벤트·operation을 원자적으로 저장한다. */

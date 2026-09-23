@@ -2,7 +2,7 @@
 
 ## 시작
 
-이 저장소의 목적은 독립 Windows 에이전트 개발 IDE다. [문서 색인](docs/00-document-index.md)을 먼저 읽고 변경 영역의 계약을 따른다. 현재는 문서, 공통 명령 봉투, 순수 큐 규칙, 첫 SQLite 저장 계층 단계다. `packages/contracts`의 전체 CMD payload 검증, 완전한 DB 스키마·워크트리 검증, 실제 데스크톱 앱이나 OMP 연동이 존재한다고 가정하지 않는다.
+이 저장소의 목적은 독립 Windows 에이전트 개발 IDE다. [문서 색인](docs/00-document-index.md)과 [구현 상태](docs/19-implementation-status.md)를 먼저 읽고 변경 영역의 계약을 따른다. 현재는 계약·순수 코어·SQLite 일부·Git 워크트리·Diff·파일·호스트 주입형 화면 단계다. 전체 CMD payload 검증, 완전한 DB 스키마, 실제 데스크톱 앱이나 OMP/IDE 연동이 존재한다고 가정하지 않는다.
 
 ## 우선순위와 권위
 

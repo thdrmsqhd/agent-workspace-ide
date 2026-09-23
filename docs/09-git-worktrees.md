@@ -59,3 +59,7 @@ push 응답을 잃으면 원격 ref 조회로 확인한다. PR 응답을 잃으�
 워크트리를 없애도 앱 검토 snapshot은 유지한다. 브랜치 삭제는 병합 관계가 확인된 앱 소유 브랜치에 한정한다. 원본 프로젝트와 원래 세션은 삭제하지 않는다.
 
 공식 Git 동작 참고: https://git-scm.com/docs/git-worktree . 실행 검증: TV-007/009.
+
+## 8. 구현 상태
+
+`packages/worktrees`는 Git 공통 디렉터리 키, 기준 커밋·앱 소유 브랜치·워크트리, 준비 저널을 만들고 재사용을 거절한다. `packages/worktrees/import`는 staged/unstaged/미추적/삭제/rename 변경을 원본 해시로 프리뷰하고 새 워크트리에 선택 적용한다. ignored 파일·symlink는 기본 가져오기 대상이 아니며 원본 폴더를 수정하지 않는다. 적용 도중 오류가 나면 대상의 부분 결과를 진단 대상으로 보존한다. OMP 대화 문맥 이전, 다중 단계 보상, 병합·push·PR·정리는 아직 구현하지 않았다.

@@ -45,3 +45,7 @@ DiffInput={snapshotId,baseLabel,targetLabel,files:[{oldPath,newPath,changeKind,o
 ## 6. 검증
 
 삽입·삭제·교체·빈 파일·CRLF/LF·한글·탭·긴 줄·바이너리·이름 변경·미저장 충돌을 포함한다. DOM의 표시 줄 수/실제 모델 줄 수와 화면 캡처를 함께 확인하여 가짜 정렬 행 0을 검증한다. 단계별 롤백은 구현하지 않는다.
+
+## 7. 구현 상태
+
+`packages/diff`는 실제 텍스트 줄과 EOL을 그대로 유지하고 삭제·삽입·교체 블록의 양쪽 경계를 계산한다. 중간 구간 비교 비용이 크면 `coarse`, 크기 임계 초과 시 `too_large`를 명시한다. `packages/files`는 작업 내부 UTF-8 파일의 디스크 해시를 조건으로 저장하고 외부 변경 시 E_FILE_CONFLICT를 반환한다. 편집기 두 뷰·viewport 연결선·dirty 버퍼/삭제·rename 복구 UI는 IDE 호스트 연결 전 미구현이다. 파일 해시 검사와 rename 사이의 외부 변경을 OS 수준에서 원자적으로 차단한다는 뜻이 아니다.

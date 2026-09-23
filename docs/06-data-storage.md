@@ -77,6 +77,6 @@ SQL migration은 CHECK·NOT NULL·FK·부분 unique index로 표현 가능한 �
 
 ## 8. 구현 현황
 
-`packages/persistence`의 첫 마이그레이션은 projects/tasks/messages/operations/events/schema_migrations에 한정한다. foreign_keys·WAL·busy_timeout, 원자적 큐 상태 저장, requestId 중복 판별, 전달 선점, 재시작 시 불명 결과 격리, SQLite 온라인 백업을 구현했다. 미지원 기존 스키마는 덮지 않고 오류로 중단한다. 새 마이그레이션을 추가할 때는 기존 스키마의 온라인 백업을 **적용 전에** 생성해야 한다.
+`packages/persistence`의 첫 마이그레이션은 projects/tasks/messages/operations/events/schema_migrations, 두 번째는 drafts/view_states에 한정한다. foreign_keys·WAL·busy_timeout, 원자적 큐 상태 저장, 초안/보기 상태, requestId 중복 판별, 전달 선점, 재시작 시 불명 결과 격리, SQLite 온라인 백업을 구현했다. 기존 v1 스키마를 v2로 올리기 전에 온라인 백업하며 미지원 스키마는 덮지 않고 오류로 중단한다.
 
-agent_sessions, drafts, artifacts, attachments, processes, port_leases, input_requests, operation_steps, integrations, snapshots, editor_buffers, view_states 및 파일 원자 쓰기·마이그레이션 업그레이드 경로는 미구현이다. 경로·Git 소유권 검증은 등록 서비스가 아직 없으므로 `createProject`와 `recordPreparedExecution`의 호출자가 확인해야 한다. 현재 검사 결과는 [도구·검증 기록](evidence/toolchain.md)에 적는다.
+agent_sessions, artifacts, attachments, processes, port_leases, input_requests, operation_steps, integrations, snapshots, editor_buffers 및 큰 파일 자료의 아티팩트 저장은 미구현이다. `packages/files`의 조건부 파일 저장은 구현했으나 DB 복구 버퍼와 아직 묶이지 않았다. 경로·Git 소유권 검증은 등록 서비스가 아직 없으므로 `createProject`와 `recordPreparedExecution`의 호출자가 확인해야 한다. 현재 검사 결과는 [도구·검증 기록](evidence/toolchain.md)에 적는다.

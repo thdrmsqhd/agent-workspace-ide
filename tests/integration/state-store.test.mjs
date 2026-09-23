@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { mkdtemp, rm, stat } from "node:fs/promises";
+import { mkdtemp, readdir, rm, stat } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { randomUUID } from "node:crypto";
@@ -18,7 +18,7 @@ async function fixture(t) {
   const project = store.createProject("앱", directory, "repo-key", "main");
   const taskId = store.createDiscussion(project, "원래 요청 전문");
   store.recordPreparedExecution(taskId, 0, join(directory, "worktree"));
-  return { store, file, taskId };
+  return { store, file, taskId, project };
 }
 
 function command(taskId, expectedRevision, text = "지시", requestId = randomUUID()) {
@@ -99,4 +99,41 @@ test("알 수 없는 기존 스키마는 보존하며 빈 DB로 덮지 않는다
   const preserved = new DatabaseSync(file);
   assert.equal(preserved.prepare("SELECT value FROM legacy").get().value, "유지");
   preserved.close();
+});
+
+test("프로젝트·작업 초안과 작업별 보기 상태를 재시작 후 유지한다", async (t) => {
+  const { store, file, project, taskId } = await fixture(t);
+  const initial = store.saveDraft({ scope: "project", ownerId: project, text: "상단 새 요청", attachmentIds: [], revision: 0 }, 0);
+  assert.equal(initial.revision, 0);
+  store.saveDraft({ ...initial, text: "계속 작성" }, 0);
+  store.saveDraft({ scope: "task", ownerId: taskId, text: "작업별 초안", attachmentIds: [], revision: 0 }, 0);
+  assert.throws(() => store.saveDraft({ ...initial, text: "과거 값" }, 0), /E_REVISION_CONFLICT/);
+  store.saveView({ taskId, layout: { centerMode: "split" }, tabs: [{ taskId, isOpen: false }], cursors: [], scroll: { conversationOffset: 12 }, revision: 0 }, 0);
+  store.saveView({ layout: { leftCollapsed: true }, tabs: [], cursors: [], scroll: {}, revision: 0 }, 0);
+  const reopened = await StateStore.open(file);
+  assert.equal(reopened.getDraft("project", project).text, "계속 작성");
+  assert.equal(reopened.getDraft("task", taskId).text, "작업별 초안");
+  assert.equal(reopened.getView(taskId).tabs[0].isOpen, false);
+  assert.equal(reopened.getView().layout.leftCollapsed, true);
+  reopened.close();
+});
+
+test("기존 v1 DB를 변경하기 전에 온라인 백업하고 v2로 올린다", async (t) => {
+  const directory = await mkdtemp(join(tmpdir(), "awi-migration-"));
+  t.after(() => rm(directory, { recursive: true, force: true }));
+  const file = join(directory, "state.sqlite");
+  const store = await StateStore.open(file);
+  store.createProject("원본", directory, "repo-key", "main");
+  store.close();
+  const old = new DatabaseSync(file);
+  old.exec("DROP TABLE view_states; DROP TABLE drafts; DELETE FROM schema_migrations WHERE id=2;");
+  old.close();
+  const upgraded = await StateStore.open(file);
+  const backups = (await readdir(directory)).filter((name) => name.startsWith("state-backup-") && name.endsWith(".sqlite"));
+  assert.equal(backups.length, 1);
+  const snapshot = new DatabaseSync(join(directory, backups[0]));
+  assert.equal(snapshot.prepare("SELECT COUNT(*) AS n FROM projects").get().n, 1);
+  assert.equal(snapshot.prepare("SELECT COUNT(*) AS n FROM schema_migrations").get().n, 1);
+  snapshot.close();
+  upgraded.close();
 });

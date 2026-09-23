@@ -1,0 +1,10 @@
+{
+  "name": "@awi/worktrees",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": { "types": "./dist/index.d.ts", "default": "./dist/index.js" },
+    "./import": { "types": "./dist/import.d.ts", "default": "./dist/import.js" }
+  }
+}

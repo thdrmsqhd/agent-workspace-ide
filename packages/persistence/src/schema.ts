@@ -45,3 +45,26 @@ CREATE TABLE events (
   event_type TEXT NOT NULL, payload_json TEXT NOT NULL CHECK (json_valid(payload_json)), created_at TEXT NOT NULL
 );
 `;
+
+export const viewSchema = `
+CREATE TABLE drafts (
+  id TEXT PRIMARY KEY, scope TEXT NOT NULL CHECK (scope IN ('project','task')),
+  project_id TEXT REFERENCES projects(id) ON DELETE RESTRICT,
+  task_id TEXT REFERENCES tasks(id) ON DELETE RESTRICT,
+  text TEXT NOT NULL, attachment_ids_json TEXT NOT NULL CHECK (json_valid(attachment_ids_json)),
+  revision INTEGER NOT NULL DEFAULT 0 CHECK (revision >= 0),
+  CHECK ((scope='project' AND project_id IS NOT NULL AND task_id IS NULL) OR
+         (scope='task' AND task_id IS NOT NULL AND project_id IS NULL))
+);
+CREATE UNIQUE INDEX drafts_project ON drafts(project_id) WHERE scope='project';
+CREATE UNIQUE INDEX drafts_task ON drafts(task_id) WHERE scope='task';
+CREATE TABLE view_states (
+  id TEXT PRIMARY KEY, task_id TEXT REFERENCES tasks(id) ON DELETE RESTRICT,
+  layout_json TEXT NOT NULL CHECK (json_valid(layout_json)),
+  tabs_json TEXT NOT NULL CHECK (json_valid(tabs_json)),
+  cursors_json TEXT NOT NULL CHECK (json_valid(cursors_json)),
+  scroll_json TEXT NOT NULL CHECK (json_valid(scroll_json)),
+  revision INTEGER NOT NULL DEFAULT 0 CHECK (revision >= 0), updated_at TEXT NOT NULL
+);
+CREATE UNIQUE INDEX view_task ON view_states(task_id) WHERE task_id IS NOT NULL;
+`;

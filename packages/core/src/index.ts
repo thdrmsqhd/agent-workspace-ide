@@ -1,4 +1,6 @@
 import type { AppError } from "@awi/contracts";
+export { decideAction } from "./policy.js";
+export type { Action, ActionApproval, PolicySnapshot, Decision, ExecutionMode } from "./policy.js";
 
 export type Phase = "discussion" | "provisioning" | "execution" | "review" | "archived";
 export type RunState = "idle" | "running" | "waiting_input" | "reconnecting" | "stopping" | "paused" | "failed";

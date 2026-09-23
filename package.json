@@ -14,11 +14,15 @@
   "scripts": {
     "docs:check": "node scripts/check-docs.mjs",
     "lint": "eslint .",
-    "typecheck": "npm run build:foundation && npm run build:core && tsc -p packages/persistence/tsconfig.json --noEmit",
+    "typecheck": "npm run build:foundation && npm run build:core && npm run build:worktrees && tsc -p packages/persistence/tsconfig.json --noEmit && tsc -p packages/diff/tsconfig.json --noEmit && tsc -p packages/ui/tsconfig.json --noEmit && tsc -p packages/files/tsconfig.json --noEmit",
     "build:foundation": "tsc -p packages/contracts/tsconfig.json",
     "build:core": "tsc -p packages/core/tsconfig.json",
     "build:persistence": "tsc -p packages/persistence/tsconfig.json",
-    "build": "npm run build:foundation && npm run build:core && npm run build:persistence",
+    "build:worktrees": "tsc -p packages/worktrees/tsconfig.json",
+    "build:diff": "tsc -p packages/diff/tsconfig.json",
+    "build:ui": "tsc -p packages/ui/tsconfig.json",
+    "build:files": "tsc -p packages/files/tsconfig.json",
+    "build": "npm run build:foundation && npm run build:core && npm run build:persistence && npm run build:worktrees && npm run build:diff && npm run build:ui && npm run build:files",
     "test:unit": "npm run build && node --test tests/unit/*.test.mjs",
     "test:integration": "npm run build && node --test tests/integration/*.test.mjs",
     "dev": "node scripts/desktop-not-ready.mjs"
