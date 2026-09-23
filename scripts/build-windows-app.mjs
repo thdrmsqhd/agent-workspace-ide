@@ -1,4 +1,5 @@
 import { spawn } from "node:child_process";
+import { URL } from "node:url";
 import process from "node:process";
 
 if (process.platform !== "win32") {
