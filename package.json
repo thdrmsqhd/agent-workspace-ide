@@ -30,7 +30,7 @@
     "verify:omp:tv006": "node scripts/verification/omp-rpc/run.mjs tv-006",
     "verify:theia:tv001": "node scripts/verification/theia-host/run.mjs tv-001",
     "verify:theia:workspace": "node scripts/verification/theia-host/probe-workspace.mjs",
-    "dev": "node scripts/desktop-not-ready.mjs",
+    "dev": "node scripts/start-desktop.mjs",
     "build:processes": "tsc -p packages/processes/tsconfig.json",
     "build:attachments": "tsc -p packages/attachments/tsconfig.json",
     "build:settings": "tsc -p packages/settings/tsconfig.json",
@@ -44,7 +44,8 @@
     "build:environment": "tsc -p packages/environment/tsconfig.json",
     "desktop:build": "node scripts/build-windows-app.mjs",
     "acceptance:summary": "node scripts/acceptance-summary.mjs",
-    "reuse:evaluate": "node scripts/reuse-evaluate.mjs"
+    "reuse:evaluate": "node scripts/reuse-evaluate.mjs",
+    "desktop:install": "npm --prefix apps/desktop install --ignore-scripts"
   },
   "devDependencies": {
     "@eslint/js": "9.39.1",

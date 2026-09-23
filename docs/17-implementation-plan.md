@@ -1,6 +1,6 @@
 # 17. 구현 작업 분해와 의존성 계획
 
-2026-09-23. 각 작업은 구현 에이전트가 수행한다. 기초 환경과 계약/큐/SQLite, 워크트리·변경 가져오기, Diff·조건부 파일 저장, 정책·화면 모형을 부분 구현했다. 실제 엔진(OMP 18.2.5)으로 RPC 기반 검증 TV-003/004/006을 실행했고 연결·프레임·읽기 전용 구성은 통과, 자손 중단은 실패했다. [REQ별 현재 상태](19-implementation-status.md)를 확인한다. IMP-02의 IDE 검증은 아직 실행하지 않았고, 실제 앱·전체 DB 스키마·연동 코드는 아직 없다.
+2026-09-24. IMP-05~15의 제품 모듈과 Windows desktop 구성까지 구현 경로가 추가되었다. 실제 수용 증거가 필요한 항목은 구현 완료와 분리해 [19 구현 상태](19-implementation-status.md)에 기록한다.
 
 ## 1. 진행 규칙
 
@@ -33,11 +33,17 @@
 
 IMP-11의 mock 상태와 실제 API 연결은 분리하여 mock 데모를 실제 앱으로 오인하지 않게 한다. IMP-08의 세션 가져오기 최종 완료는 IMP-10까지 필요하다. IMP-02/03 실패로 도메인 설계와 무관한 작업을 전부 중단하지 않는다.
 
-## 3. 첫 구현 착수 묶음
+## 3. 현재 구현 묶음
 
-현재 구현된 묶음은 IMP-01 뒤 IMP-05/06/07 일부와 IMP-08의 Git 파일 가져오기 부분, IMP-09의 작업별 프로세스 트리 소유·종료 기반, IMP-11 화면 상태/DOM, IMP-13의 줄 비교 순수 모델이다. IMP-03의 1단계(RPC 연결·프레임·요청 ID·하위 트리·읽기 전용 강제)는 실제 엔진으로 검증했고 결과는 [TV-003](evidence/TV-003/README.md)·[TV-004](evidence/TV-004/README.md)·[TV-006](evidence/TV-006/README.md)에 있다. 이 검증은 엔진 계약 확인이며 `packages/engine-omp` 구현이나 완료 선언이 아니다.
+- IMP-01/05/06/07: monorepo, 계약, 상태/큐, SQLite v3, 첨부·settings·input·process·integration journal·artifact.
+- IMP-08/14: worktree 준비/선택 import, 저장소 직렬 merge, conflict/stale target, cleanup, push/PR provider 경계.
+- IMP-09/10/15: 작업별 process tree, OMP RPC v2, subagent/input/history/model/session relocation, abort fallback, restart recovery/diagnostics.
+- IMP-11/12/13: dashboard DOM, queue/input/attachment UI, task별 IDE state, port/browser, dirty buffer, source-change debug warning, 실제 줄 보존 diff.
+- IMP-16: `apps/desktop` Electron target과 고정 Open VSX 구성. 실제 Windows native build/AT는 별도 수용 항목.
+- IMP-04/17: 3/12 baseline/candidate process sampler·비교 계산기 구현. 실측은 미실행.
+- IMP-18: Windows build 진입점은 있으나 installer/update/uninstall 및 release gate 전체 증거는 아직 필요하다.
 
-IMP-03의 남은 부분: 자손까지 포함한 엔진 중단 경로 확보(TV-004 실패 항목), 정책 훅/호스트 도구, 세션 이전(TV-007), 재연결. 제품 측 fallback으로 `packages/processes`가 작업별 프로세스 트리를 종료할 수 있게 했지만, 실제 `packages/engine-omp`에서 RPC abort→fallback을 연결하고 TV-004를 재실행하기 전에는 raw 엔진 능력 통과로 보지 않는다. IMP-02의 IDE 호스트·확장 검증은 아직 미실행이며 해당 버전 고정도 하지 않았다. 검증하지 않은 런타임·확장 버전을 임의로 잠그지 않는다.
+제품 구현 뒤에도 TV-001/002/004/007/012/014와 AT-01~23의 실제 실행 결과를 완료 조건으로 유지한다.
 
 ## 4. 작업별 인계 형식
 

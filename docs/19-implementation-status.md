@@ -1,26 +1,53 @@
-# 19. 구현 상태와 연동 보류 목록
+# 19. 구현 상태와 수용 보류 목록
 
-2026-09-23. 제품 요구사항의 정의는 [03 요구사항](03-requirements-traceability.md), 수용 판정은 [16 수용 검증](16-acceptance-tests.md)이 권위자다. 이 표는 코드를 구현한 **범위**만 기록한다. 어느 REQ도 전체 수용 완료로 표시하지 않는다.
+2026-09-24. [03 요구사항](03-requirements-traceability.md)의 REQ-001~050을 기준으로 코드 구현 범위와 실제 수용 검증을 분리한다. **구현 경로가 존재한다는 사실만으로 PASS로 표시하지 않는다.** 최종 수용은 [16 수용 검증](16-acceptance-tests.md)과 `npm run acceptance:summary`의 증거가 권위자다.
 
-| REQ | 현재 구현 범위 | 남은 필수 부분 |
-| --- | --- | --- |
-| 002,003,049,050 | `packages/ui`의 프로젝트·카드·상단 요청/작업 탭 구분, 탭 닫기·재열기·좌우 상태와 DOM 레이아웃 | 실제 앱 호스트와 프로젝트·파일·터미널 데이터, 창 재시작 화면 수용 |
-| 004,031,032 | `packages/core`의 논의 도구 제한·수동/자동 승인·스냅샷/HEAD/정책 해시 판정, 18.2.5에서 논의 제한 구성의 실제 차단 확인([TV-006](evidence/TV-006/README.md)) | 앱이 논의 구성 오버레이를 생성·강제하는 경로, 지침 해석·정책 스냅샷 생성, 승인·반영 서비스 |
-| 005,019,021 | `packages/persistence`의 논의·큐·초안·화면 상태와 결과 불명 격리 | 에이전트 세션·프로세스 상태 조회, 실제 종료·재연결, 버퍼·첨부 복구 |
-| 006,029,030,045 | `packages/worktrees`의 브랜치·워크트리 준비 저널과 선택 변경 프리뷰·복사, 원본 변화 검사 | OMP 세션 이전, 준비 중 전체 보상·작업 시작 연계, 실행 시작 수용 |
-| 007,012,013,016,017 | `packages/core`의 12슬롯·대기열·Esc 규칙, SQLite의 수정·선점 원자성. `packages/processes`의 작업별 프로세스 트리 소유·격리 종료 기반. 18.2.5 실측에서 raw `abort`가 하위 에이전트 셸을 멈추지 않음([TV-004](evidence/TV-004/README.md)) | 12개 실제 동시 실행, `engine-omp`의 abort→프로세스 트리 fallback 연결·재개, UI 즉시/대기 입력 수용 |
-| 008,009,010 | `packages/ui`의 카드 원문·행동·응답 수·하위 에이전트 트리 투영 | 실제 엔진 이벤트·빠른 답변·상태 동기화 |
-| 027 | `packages/files`의 작업 경로 검증, 해시 조건부 UTF-8 저장과 충돌 감지 | IDE 미저장 버퍼와 비교 UI, 외부 rename/delete·원자적 파일 권한 수용 |
-| 039,040 | `packages/diff`의 원문 줄·EOL 보존, 변경 블록·대응 경계, spacer 0 | 실제 편집기 두 뷰·장식·연결선·독립 스크롤 DOM 수용 |
-| 047 | 코어가 OMP/IDE 원시 타입에 의존하지 않는 패키지 경계 | 두 번째 엔진 어댑터 구현은 후속, 의존성 전체 검사 |
-| 001,011,014,015,018,020,022~026,028,033~038,041~044,046,048 | 문서 계약 및 일부 기초 타입/화면 모형만 있음 | 실제 IDE/확장·첨부·터미널·디버거·통합 반영·설정·메모리 비교·후보 검증 등 해당 [REQ](03-requirements-traceability.md) 수용 기준 수행 |
+| REQ | 구현 상태 | 코드/근거 | 남은 수용 검증 |
+| --- | --- | --- | --- |
+| 001 | 구현 경로 있음 | `apps/desktop` Theia/Electron 독립 셸, `desktop:build`, `npm run dev` | Windows 네이티브 production build·실행·패키징 |
+| 002,003,009,011,049,050 | 구현 | `packages/ui` 대시보드·새 요청·카드·작업 탭·4영역 DOM | 실제 desktop host 화면 AT |
+| 004 | 구현 + 엔진 검증 | discussion OMP overlay: read/glob/grep/todo, write/shell/MCP 차단 | 제품 desktop에서 동일 정책 재확인 |
+| 005,006,045 | 구현 | SQLite discussion 보존, `WorkspaceRuntime.startTask`, baseRef, worktree | 실제 UI 시작 흐름 |
+| 007 | 구현 제약 | 12-slot domain/runtime | 실제 OMP 3개·12개 동시 실행 및 자원 실측 |
+| 008 | 구현 | OMP subagent subscription/tree/messages + UI agent tree | 실제 제품 UI 트리 동기화 |
+| 010 | 구현 | extension_ui_request → SQLite → 빠른 응답 UI → extension_ui_response | 실제 OMP 질문 round-trip |
+| 012,013 | 구현 | immediate/queued, steer, queued update/delete, 원자 DB | 실제 UI 경합·완료 경계 |
+| 014,015 | 구현 | file/folder/image/code-selection attachment + 경계 검사 | 실제 파일 선택 UI/엔진 이미지 입력 |
+| 016 | 구현 fallback | RPC abort → 작업별 engine/shell/build process tree 종료, 서버/디버거 보존 | 실제 OMP TV-004를 제품 adapter 경로로 재실행 |
+| 017,019,020,021 | 구현 | session artifact/settings restore, resume, recovery plan, graceful shutdown | 강제 종료/재시작/desktop 종료 장애주입 |
+| 018,024,025,026 | 상태 모델 구현 | task별 IDE/buffer/terminal/debugger state, sourceChanged, process roles | Theia 실제 언어/PTY/debug session과 결합 TV-002/AT |
+| 022,023 | 후보 호스트 구현·부분 검증 | Theia 1.75, Java/Python/debug/icons Open VSX 고정 | TV-001 언어기능·debug 전체, Electron host |
+| 027 | 구현 | dirty buffer conflict + hash 조건부 UTF-8 저장 | 실제 Theia dirty buffer/외부 rename-delete |
+| 028 | 구현 | TCP port lease/collision + HTTP(S) external open | 실제 개발 서버 ready/url 등록 |
+| 029,030 | 구현 | 기존 OMP session `switch_session`, 새 worktree, 선택 변경 import | 실제 OMP TV-007 |
+| 031,032 | 구현 | manual/automatic policy, workflow instruction, 승인 gate, 테스트 강제 금지 | 실제 프로젝트 지침 TV-014 |
+| 033,034 | 구현 + Git 통합시험 | repoKey 직렬화, HEAD 재확인, conflict 격리 | 다중 실제 remote 반영 |
+| 035 | 구현 | cleanup blockers + git worktree remove, branch/history 보존 | 실제 dirty/debug/server 조합 |
+| 036,037 | 구현 | linked follow-up plan, completed/cancelled/archive 보존 | UI 완료/취소 카드 수용 |
+| 038 | 구현 | review artifact: 원요청·후속·요약·files·checks·URL·integration actions | 실제 diff/editor 검토 화면 |
+| 039,040 | 구현 | 원본 줄/EOL 보존 diff, change blocks, spacer 0 | 실제 두 editor + 연결선/독립 scroll |
+| 041 | 구현 | project defaults + immutable task snapshot + restart restore | desktop settings UI |
+| 042 | 구현 | global extension registry, 실행 중 update 차단, desktop pinned extensions | 실제 확장 업데이트/rollback |
+| 043 | 구현 | HTTP(S) 외부 브라우저 dispatch | 실제 server-ready 연동 |
+| 044 | 구현 | ordered environment preparation, 실패 중단, 같은 단계 재시도 | 실제 프로젝트별 workflow 명령 |
+| 046 | 측정 도구 구현 | Windows/Linux process sampler + 3/12 baseline/candidate 비교 | 실제 동일 Windows 장비 반복 실측 |
+| 047 | 구현 | core/UI와 OMP raw 타입 분리, `EngineSessionFactory`, `packages/engine-omp` edge adapter | 두 번째 엔진은 후속이며 지원 완료 주장 안 함 |
+| 048 | 평가 gate 구현 | `reuse:evaluate`, 미측정 가중치 배제 | 후보별 실제 근거 입력, 80% 결정 |
+| 033~038 외 반영 | 구현 | local merge, push, provider-neutral PR, side-effect journal/recovery | 실제 GitHub/원격 공급자 E2E |
 
-마지막 행의 REQ-048은 후보 평가 문서가 있어도 실제 IDE 기반의 80% 유사도 판정이 확정된 것은 아니다. REQ-001/018/022/023의 VS Code 확장·IDE 유지와 REQ-007/016의 실제 다중 에이전트 동시 실행은 선택 IDE 버전을 정하고 연동 검증해야만 완료 가능하다. 2026-09-23에 OMP 18.2.5로 RPC 기반 검증(TV-003/004/006)을 실제 실행했고, 그 결과 연결·프레임·읽기 전용 구성은 통과, 자손 중단은 실패로 기록했다. IDE 호스트 검증(TV-001/002)은 아직 실행하지 않았다.
+## 현재 차단/미검증
 
-## 이번 코드의 경계
+코드 구현 자체의 주요 공백은 줄였지만 다음은 외부 실행 증거가 필요하다.
 
-- `packages/ui`는 호스트가 호출하는 DOM 렌더러와 화면 상태 투영이다. 독립 Windows 앱이나 VS Code 호환 편집기가 아니다.
-- `packages/worktrees/import`는 원본 파일을 변경하지 않지만 대상 복사 도중 오류가 나면 부분 결과를 남겨 검토하게 한다. 기존 세션 대화의 문맥 이전까지 구현한 것은 아니다.
-- `packages/files`는 저장 시 확인한 디스크 해시가 다르면 거절한다. 별도 프로세스가 검사와 rename 사이의 매우 짧은 시간에 파일을 바꾸는 것을 OS 수준에서 원자적으로 차단하지는 않는다.
-- `packages/core` 정책 판정은 호스트에서 실제 도구 호출을 가로채기 전에는 읽기 전용 실행 보호가 아니다.
-- 파일 DB 통합 검사와 Git 작업 검사는 실제 워크플로우·확장·성능·Windows 설치 시험을 대신하지 않는다.
+1. Windows Electron native build/패키징과 제품 셸에서 dashboard/runtime을 실제 구동하는 AT.
+2. TV-001의 Java/Python 자동완성·선언 이동·진단·rename·debug 변수 전체 검증과 TV-002.
+3. OMP 18.2.5 raw abort 실패를 제품 process-tree fallback으로 감싼 TV-004 재검증, 기존 세션 이전 TV-007.
+4. 실제 3개/12개 동시 작업 메모리 baseline/candidate 측정과 장시간 PERF.
+5. AT-01~23 실제 증거 파일. 미실행 항목은 `NOT_RUN` 또는 환경 차단이면 `BLOCKED`로 기록한다.
+
+## 완료 판정 규칙
+
+- CI의 lint/typecheck/build/unit/integration 성공은 구현 회귀 검증이다.
+- OMP/IDE/Windows/성능 같은 외부 조건은 해당 TV/AT/PERF 증거 없이는 PASS가 아니다.
+- 재시작 시 side-effect가 `unknown`이면 자동 재실행하지 않고 확인 대기로 둔다.
+- raw OMP의 `abortTreeVerified=false`는 제품 fallback이 추가되어도 실제 TV 재검증 전까지 그대로 유지한다.
