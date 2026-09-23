@@ -1,0 +1,26 @@
+{
+  "version": 1,
+  "recipe": {
+    "name": "Node.js app",
+    "kind": "node",
+    "bootstrap": [
+      "npm install"
+    ],
+    "build": [
+      "npm run build",
+      "npm run typecheck"
+    ],
+    "test": [
+      "npm run lint"
+    ],
+    "start": "npm run dev",
+    "port": null,
+    "readinessPath": "/",
+    "evidence": [
+      "Detected package.json",
+      "Package manager: npm",
+      "Scripts: docs:check, lint, typecheck, build:foundation, build:core, build:persistence, build:worktrees, build:diff, build:ui, build:files, build, test:unit, test:integration, verify:omp:tv003, verify:omp:tv004, verify:omp:tv006, verify:theia:tv001, verify:theia:workspace, dev"
+    ]
+  },
+  "updatedAt": "2026-09-23T17:59:48.143196+00:00"
+}
