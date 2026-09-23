@@ -1,0 +1,28 @@
+name: desktop-windows
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "apps/desktop/**"
+      - ".github/workflows/desktop-windows.yml"
+  workflow_dispatch:
+
+jobs:
+  build-desktop:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .node-version
+          cache: npm
+          cache-dependency-path: package-lock.json
+      - name: Install desktop dependencies
+        run: npm --prefix apps/desktop install --ignore-scripts
+      - name: Download pinned Open VSX plugins
+        run: npm --prefix apps/desktop run download:plugins
+      - name: Rebuild Electron native modules
+        run: npm --prefix apps/desktop run rebuild
+      - name: Build production Electron application
+        run: npm --prefix apps/desktop run build
