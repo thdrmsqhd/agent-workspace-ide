@@ -1,5 +1,6 @@
 import { createInterface } from "node:readline";
 import process from "node:process";
+import { setInterval } from "node:timers";
 
 const ignoreAbort = process.argv.includes("--ignore-abort");
 let streaming = true;
