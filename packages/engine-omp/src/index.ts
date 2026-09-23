@@ -88,6 +88,11 @@ export class OmpEngineAdapter {
       this.#pending.clear();
     });
     this.#ready = await this.waitForEvent((frame) => frame.type === "ready", options.readyTimeoutMs ?? 45_000);
+    const supported = this.#ready.supportedProtocolVersions;
+    if (Array.isArray(supported) && supported.includes(2)) {
+      const negotiated = await this.send({ type: "negotiate_protocol", protocolVersion: 2 });
+      if (negotiated.success === false) throw new Error("OMP protocol v2 협상에 실패했습니다.");
+    }
     return this.#ready;
   }
 
@@ -121,6 +126,21 @@ export class OmpEngineAdapter {
 
   async state(): Promise<Frame> {
     return this.send({ type: "get_state" });
+  }
+
+  async sessionFile(): Promise<string> {
+    const response = await this.state();
+    const data = response.data;
+    if (!isFrame(data) || typeof data.sessionFile !== "string" || !data.sessionFile) {
+      throw new Error("OMP 세션 파일을 확인할 수 없습니다.");
+    }
+    return data.sessionFile;
+  }
+
+  async switchSession(sessionPath: string): Promise<void> {
+    if (!sessionPath.trim()) throw new Error("전환할 OMP 세션 경로가 필요합니다.");
+    const response = await this.send({ type: "switch_session", sessionPath });
+    if (response.success === false) throw new Error(typeof response.error === "string" ? response.error : "OMP 세션 전환에 실패했습니다.");
   }
 
   async abortTask(taskId: string, gracefulWaitMs = 1_500): Promise<AbortResult> {

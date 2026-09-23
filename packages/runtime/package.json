@@ -1,0 +1,15 @@
+{
+  "name": "@awi/runtime",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "exports": { ".": { "types": "./dist/index.d.ts", "default": "./dist/index.js" } },
+  "dependencies": {
+    "@awi/core": "0.0.0",
+    "@awi/engine-omp": "0.0.0",
+    "@awi/persistence": "0.0.0",
+    "@awi/processes": "0.0.0",
+    "@awi/settings": "0.0.0",
+    "@awi/worktrees": "0.0.0"
+  }
+}

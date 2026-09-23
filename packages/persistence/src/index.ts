@@ -126,6 +126,70 @@ export class StateStore {
     return id;
   }
 
+
+  getProjectInfo(projectId: string): { id: string; name: string; repoPath: string; repoKey: string; defaultBranch: string; revision: number } {
+    const row = requireRow(this.db.prepare("SELECT id,name,repo_path,repo_key,default_branch,revision FROM projects WHERE id=?").get(projectId) as Row | undefined, "프로젝트");
+    return { id: row.id as string, name: row.name as string, repoPath: row.repo_path as string, repoKey: row.repo_key as string,
+      defaultBranch: row.default_branch as string, revision: row.revision as number };
+  }
+
+  findProjectByRepoKey(repoKey: string): { id: string; name: string; repoPath: string; repoKey: string; defaultBranch: string; revision: number } | undefined {
+    const row = this.db.prepare("SELECT id,name,repo_path,repo_key,default_branch,revision FROM projects WHERE repo_key=?").get(repoKey) as Row | undefined;
+    return row ? { id: row.id as string, name: row.name as string, repoPath: row.repo_path as string, repoKey: row.repo_key as string,
+      defaultBranch: row.default_branch as string, revision: row.revision as number } : undefined;
+  }
+
+  getTaskInfo(taskId: string): { id: string; projectId: string; originalPrompt: string; phase: string; runState: string; integrationState: string; disposition: string; worktreePath?: string; revision: number } {
+    const row = requireRow(this.db.prepare("SELECT id,project_id,original_prompt,phase,run_state,integration_state,disposition,worktree_path,revision FROM tasks WHERE id=?").get(taskId) as Row | undefined, "작업");
+    return { id: row.id as string, projectId: row.project_id as string, originalPrompt: row.original_prompt as string,
+      phase: row.phase as string, runState: row.run_state as string, integrationState: row.integration_state as string,
+      disposition: row.disposition as string, ...(typeof row.worktree_path === "string" ? { worktreePath: row.worktree_path } : {}), revision: row.revision as number };
+  }
+
+  setTaskRunState(taskId: string, runState: TaskQueue["runState"], queueMode?: TaskQueue["queueMode"]): TaskQueue {
+    return this.transaction(() => {
+      const before = this.getTaskQueue(taskId);
+      const nextQueueMode = queueMode ?? before.queueMode;
+      const changed = this.db.prepare("UPDATE tasks SET run_state=?,queue_mode=?,revision=revision+1,updated_at=? WHERE id=? AND revision=?")
+        .run(runState, nextQueueMode, new Date().toISOString(), taskId, before.revision);
+      if (changed.changes !== 1) throw new Error("E_REVISION_CONFLICT: 작업 상태가 변경되었습니다.");
+      this.appendEvent(taskId, "task.changed", { taskId, revision: before.revision + 1, runState });
+      return this.getTaskQueue(taskId);
+    });
+  }
+
+  recordImmediateMessage(taskId: string, role: "user" | "assistant" | "system", content: string, attachmentIds: readonly string[] = []): string {
+    if (!content.trim() && attachmentIds.length === 0) throw new Error("메시지 내용 또는 첨부가 필요합니다.");
+    const id = randomUUID();
+    const now = new Date().toISOString();
+    this.db.prepare("INSERT INTO messages(id,task_id,role,content,attachment_ids_json,delivery_mode,queue_state,revision,created_at,updated_at) VALUES(?,?,?,?,?,'immediate','none',0,?,?)")
+      .run(id, taskId, role, content, JSON.stringify(attachmentIds), now, now);
+    this.appendEvent(taskId, "message.created", { taskId, messageId: id, role });
+    return id;
+  }
+
+  markDispatchAccepted(taskId: string, messageId: string): TaskQueue {
+    return this.transaction(() => {
+      const changed = this.db.prepare("UPDATE messages SET queue_state='accepted',revision=revision+1,updated_at=? WHERE id=? AND task_id=? AND queue_state='dispatching'")
+        .run(new Date().toISOString(), messageId, taskId);
+      if (changed.changes !== 1) throw new Error("E_REVISION_CONFLICT: 지시 전달 상태가 변경되었습니다.");
+      this.db.prepare("UPDATE operations SET state='succeeded' WHERE scope_key=? AND method='queue.dispatch' AND payload_hash=? AND state='accepted'")
+        .run(taskId, digest(messageId));
+      this.appendEvent(taskId, "queue.changed", { taskId, messageId, state: "accepted" });
+      return this.getTaskQueue(taskId);
+    });
+  }
+
+  markDispatchFinished(taskId: string, messageId: string): TaskQueue {
+    return this.transaction(() => {
+      const changed = this.db.prepare("UPDATE messages SET queue_state='finished',revision=revision+1,updated_at=? WHERE id=? AND task_id=? AND queue_state='accepted'")
+        .run(new Date().toISOString(), messageId, taskId);
+      if (changed.changes !== 1) throw new Error("수락된 지시가 아니거나 이미 완료되었습니다.");
+      this.appendEvent(taskId, "queue.changed", { taskId, messageId, state: "finished" });
+      return this.getTaskQueue(taskId);
+    });
+  }
+
   createDiscussion(projectId: string, originalPrompt: string): string {
     if (!originalPrompt.trim()) throw new Error("원래 요청이 비어 있습니다.");
     return this.transaction(() => {
