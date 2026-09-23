@@ -16,7 +16,7 @@ test("PR 생성은 정책 승인과 공급자 경계를 거친다",async()=>{
    policy,undefined,{async create(){return {url:"https://example.test/pr/1",id:"1"};}}
  );
  assert.equal(result.state,"pr_created");
- assert.throws(()=>createIntegratedPullRequest(
+ await assert.rejects(createIntegratedPullRequest(
    {repoKey:"r",headRef:"feature",baseRef:"main",title:"T",body:"B"},
    {mode:"manual",policyHash:"p",allowedActions:new Set(["createPR"])},undefined,{async create(){return {url:"https://example.test/pr/1",id:"1"};}}
  ),/PR 승인 필요/);
