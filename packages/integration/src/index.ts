@@ -165,3 +165,63 @@ export async function cleanupWorktree(request: {
   // 작업 브랜치는 이력 보존을 위해 자동 삭제하지 않는다.
   return { removed: true, preservedBranch: true };
 }
+
+export interface PushRequest {
+  readonly worktreePath: string;
+  readonly remote: string;
+  readonly remoteRef: string;
+  readonly policy: PolicySnapshot;
+  readonly approval?: ActionApproval;
+}
+
+export async function pushIntegratedHead(request: PushRequest): Promise<{ state: "pushed"; head: string }> {
+  const decision = decideAction(request.policy, "push", request.approval);
+  if (decision.kind !== "allowed") throw new Error(`push 승인 필요: ${decision.reason}`);
+  if (!request.remote.trim() || !request.remoteRef.trim()) throw new Error("push remote/ref가 필요합니다.");
+  const status = await git(request.worktreePath, ["status", "--porcelain=v1"]);
+  if (status) throw new Error("미반영 변경이 있는 작업대는 push할 수 없습니다.");
+  const head = await git(request.worktreePath, ["rev-parse", "HEAD"]);
+  await git(request.worktreePath, ["push", request.remote, `HEAD:${request.remoteRef}`]);
+  return { state: "pushed", head };
+}
+
+export interface PullRequestInput {
+  readonly repoKey: string;
+  readonly headRef: string;
+  readonly baseRef: string;
+  readonly title: string;
+  readonly body: string;
+}
+
+export interface PullRequestProvider {
+  create(input: PullRequestInput): Promise<{ url: string; id: string }>;
+}
+
+export async function createIntegratedPullRequest(
+  input: PullRequestInput,
+  policy: PolicySnapshot,
+  approval: ActionApproval | undefined,
+  provider: PullRequestProvider,
+): Promise<{ state: "pr_created"; url: string; id: string }> {
+  const decision = decideAction(policy, "createPR", approval);
+  if (decision.kind !== "allowed") throw new Error(`PR 승인 필요: ${decision.reason}`);
+  if (!input.headRef.trim() || !input.baseRef.trim() || !input.title.trim()) throw new Error("PR head/base/title이 필요합니다.");
+  const result = await provider.create(input);
+  if (!/^https:\/\//u.test(result.url)) throw new Error("PR 공급자가 유효한 HTTPS URL을 반환하지 않았습니다.");
+  return { state: "pr_created", ...result };
+}
+
+export interface WorkflowInstructions {
+  readonly preparationStepIds: readonly string[];
+  readonly requiredChecks: readonly string[];
+  readonly integrationActions: readonly ("merge" | "push" | "createPR")[];
+}
+
+export function normalizeWorkflowInstructions(value: WorkflowInstructions | undefined): WorkflowInstructions {
+  if (!value) return { preparationStepIds: [], requiredChecks: [], integrationActions: [] };
+  return {
+    preparationStepIds: [...new Set(value.preparationStepIds)],
+    requiredChecks: [...new Set(value.requiredChecks)],
+    integrationActions: [...new Set(value.integrationActions)],
+  };
+}
