@@ -127,6 +127,26 @@ export class StateStore {
   }
 
 
+
+  listProjects(): Array<{ id: string; name: string; createdAt: string }> {
+    return (this.db.prepare("SELECT id,name,created_at FROM projects ORDER BY created_at,id").all() as Row[])
+      .map((row) => ({ id: row.id as string, name: row.name as string, createdAt: row.created_at as string }));
+  }
+
+  listTasks(): Array<{ id: string; projectId: string; originalPrompt: string; phase: string; runState: string; disposition: string; worktreePath?: string; createdAt: string }> {
+    return (this.db.prepare("SELECT id,project_id,original_prompt,phase,run_state,disposition,worktree_path,created_at FROM tasks ORDER BY created_at,id").all() as Row[])
+      .map((row) => ({
+        id: row.id as string,
+        projectId: row.project_id as string,
+        originalPrompt: row.original_prompt as string,
+        phase: row.phase as string,
+        runState: row.run_state as string,
+        disposition: row.disposition as string,
+        ...(typeof row.worktree_path === "string" ? { worktreePath: row.worktree_path } : {}),
+        createdAt: row.created_at as string,
+      }));
+  }
+
   getProjectInfo(projectId: string): { id: string; name: string; repoPath: string; repoKey: string; defaultBranch: string; revision: number } {
     const row = requireRow(this.db.prepare("SELECT id,name,repo_path,repo_key,default_branch,revision FROM projects WHERE id=?").get(projectId) as Row | undefined, "프로젝트");
     return { id: row.id as string, name: row.name as string, repoPath: row.repo_path as string, repoKey: row.repo_key as string,

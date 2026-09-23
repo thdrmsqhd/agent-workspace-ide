@@ -22,7 +22,7 @@
     "build:diff": "tsc -p packages/diff/tsconfig.json",
     "build:ui": "tsc -p packages/ui/tsconfig.json",
     "build:files": "tsc -p packages/files/tsconfig.json",
-    "build": "npm run build:foundation && npm run build:core && npm run build:persistence && npm run build:worktrees && npm run build:diff && npm run build:ui && npm run build:files && npm run build:processes && npm run build:attachments && npm run build:settings && npm run build:ide && npm run build:engine && npm run build:integration && npm run build:runtime && npm run build:recovery && npm run build:performance && npm run build:environment",
+    "build": "npm run build:foundation && npm run build:core && npm run build:persistence && npm run build:worktrees && npm run build:diff && npm run build:ui && npm run build:files && npm run build:processes && npm run build:attachments && npm run build:settings && npm run build:ide && npm run build:engine && npm run build:integration && npm run build:runtime && npm run build:recovery && npm run build:performance && npm run build:environment && npm run build:app-host",
     "test:unit": "npm run build && node --test tests/unit/*.test.mjs",
     "test:integration": "npm run build && node --test tests/integration/*.test.mjs",
     "verify:omp:tv003": "node scripts/verification/omp-rpc/run.mjs tv-003",
@@ -45,7 +45,8 @@
     "desktop:build": "node scripts/build-windows-app.mjs",
     "acceptance:summary": "node scripts/acceptance-summary.mjs",
     "reuse:evaluate": "node scripts/reuse-evaluate.mjs",
-    "desktop:install": "npm --prefix apps/desktop install --ignore-scripts"
+    "desktop:install": "npm --prefix apps/desktop install --ignore-scripts",
+    "build:app-host": "tsc -p packages/app-host/tsconfig.json"
   },
   "devDependencies": {
     "@eslint/js": "9.39.1",
