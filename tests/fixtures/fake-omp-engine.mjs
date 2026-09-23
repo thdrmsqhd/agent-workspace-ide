@@ -3,7 +3,7 @@ import process from "node:process";
 import { setInterval, setTimeout } from "node:timers";
 
 const ignoreAbort = process.argv.includes("--ignore-abort");
-let streaming = false;
+let streaming = ignoreAbort;
 const sessionFile = "fake-session.jsonl";
 process.stdout.write(JSON.stringify({ type: "ready", protocolVersions: [1,2] }) + "\n");
 const lines = createInterface({ input: process.stdin, crlfDelay: Number.POSITIVE_INFINITY });
