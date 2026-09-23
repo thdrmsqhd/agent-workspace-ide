@@ -2,9 +2,9 @@
   "scenario": "tv-001",
   "verificationId": "TV-001",
   "hostRoot": "C:\\Users\\gbsong\\source\\repos\\agent-workspace-ide\\apps\\ide-verification-host",
-  "probeWorkspace": "C:\\Users\\gbsong\\AppData\\Local\\Temp\\awi-theia-hostboot-2026-09-23T17-52-02-426Z",
-  "backendPort": 3180,
-  "debugPort": 9480,
+  "probeWorkspace": "C:\\Users\\gbsong\\AppData\\Local\\Temp\\awi-theia-hostboot-2026-09-23T17-56-57-576Z",
+  "backendPort": 3152,
+  "debugPort": 9452,
   "criteria": [
     {
       "id": "backend-serving",
@@ -35,10 +35,10 @@
   "backendAlreadyRunning": false,
   "deployedPlugins": 6,
   "browserTarget": {
-    "url": "http://127.0.0.1:3180/",
+    "url": "http://127.0.0.1:3152/",
     "title": "Eclipse Theia"
   },
-  "workspaceUrl": "http://127.0.0.1:3180/#/C:/Users/gbsong/AppData/Local/Temp/awi-theia-hostboot-2026-09-23T17-52-02-426Z",
+  "workspaceUrl": "http://127.0.0.1:3152/#/C:/Users/gbsong/AppData/Local/Temp/awi-theia-hostboot-2026-09-23T17-56-57-576Z",
   "trustDialogClicked": false,
   "restrictedMode": false,
   "explorerEntries": [
@@ -55,6 +55,6 @@
   "browserShowsExtensionHint": true,
   "screenshot": "C:\\Users\\gbsong\\source\\repos\\agent-workspace-ide\\docs\\evidence\\TV-001\\raw\\workbench.png",
   "consoleErrors": [],
-  "pageTitle": "awi-theia-hostboot-2026-09-23T17-52-02-426Z - Eclipse Theia",
+  "pageTitle": "awi-theia-hostboot-2026-09-23T17-56-57-576Z - Eclipse Theia",
   "pass": true
 }
