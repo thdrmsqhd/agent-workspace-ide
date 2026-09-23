@@ -5,7 +5,13 @@ export interface WorkspaceCallbacks {
   createDiscussion(projectId: string, prompt: string): void;
   sendTask?(taskId: string, text: string, delivery: "immediate" | "queued"): void;
   abortTask?(taskId: string): void;
+  resumeTask?(taskId: string): void;
+  cancelTask?(taskId: string): void;
   beginTask?(taskId: string): void;
+  updateQueued?(taskId: string, messageId: string, revision: number, text: string): void;
+  deleteQueued?(taskId: string, messageId: string, revision: number): void;
+  respondInput?(taskId: string, inputRequestId: string, response: string | boolean): void;
+  addAttachment?(taskId: string, kind: "file" | "folder" | "image" | "code-selection"): void;
   openFile?(taskId: string, relativePath: string): void;
 }
 
@@ -127,6 +133,50 @@ export function renderWorkspace(
       conversation.append(node(doc, "p", undefined, `상태: ${task.status} · 현재: ${task.currentAction ?? "확인 중"}`));
       if (callbacks.beginTask && task.status === "discussion") conversation.append(button(doc, "작업 시작", () => callbacks.beginTask?.(task.id)));
       if (callbacks.abortTask && task.status === "running") conversation.append(button(doc, "중단", () => callbacks.abortTask?.(task.id)));
+      if (callbacks.resumeTask && (task.status === "paused" || task.status === "failed")) conversation.append(button(doc, "재개", () => callbacks.resumeTask?.(task.id)));
+      if (callbacks.cancelTask && !task.archived) conversation.append(button(doc, "작업 취소", () => callbacks.cancelTask?.(task.id)));
+      for (const request of task.inputRequests ?? []) {
+        const panel = node(doc, "section", "awi-input-request");
+        panel.append(node(doc, "strong", undefined, request.title ?? "응답 필요"));
+        panel.append(node(doc, "p", undefined, request.message));
+        for (const option of request.options ?? []) {
+          panel.append(button(doc, option, () => callbacks.respondInput?.(task.id, request.id, option)));
+        }
+        if (!(request.options?.length)) {
+          const answer = node(doc, "input");
+          answer.setAttribute("aria-label", "빠른 응답");
+          panel.append(answer, button(doc, "응답", () => {
+            if (answer.value.trim()) callbacks.respondInput?.(task.id, request.id, answer.value);
+          }));
+        }
+        conversation.append(panel);
+      }
+      if ((task.queue?.length ?? 0) > 0) {
+        const queue = node(doc, "section", "awi-queue");
+        queue.append(node(doc, "h3", undefined, "대기 지시"));
+        for (const item of task.queue ?? []) {
+          if (item.state === "deleted" || item.state === "finished") continue;
+          const row = node(doc, "div", "awi-queue-row");
+          if (item.state === "queued") {
+            const edit = node(doc, "input");
+            edit.value = item.text;
+            row.append(edit);
+            if (callbacks.updateQueued) row.append(button(doc, "수정", () => callbacks.updateQueued?.(task.id, item.id, item.revision, edit.value)));
+            if (callbacks.deleteQueued) row.append(button(doc, "삭제", () => callbacks.deleteQueued?.(task.id, item.id, item.revision)));
+          } else {
+            row.append(node(doc, "span", undefined, `${item.text} · ${item.state === "dispatching" ? "전달 중" : item.state}`));
+          }
+          queue.append(row);
+        }
+        conversation.append(queue);
+      }
+      if (callbacks.addAttachment) {
+        const attach = node(doc, "div", "awi-attachments");
+        for (const kind of ["file","folder","image","code-selection"] as const) {
+          attach.append(button(doc, `${kind} 첨부`, () => callbacks.addAttachment?.(task.id, kind)));
+        }
+        conversation.append(attach);
+      }
       if (callbacks.sendTask) {
         const input = node(doc, "textarea", "awi-task-prompt");
         input.value = state.drafts[task.id] ?? "";

@@ -301,6 +301,27 @@ export class WorkspaceRuntime {
     if (text?.trim()) await this.send(taskId, text, "immediate");
   }
 
+
+  async cancelTask(taskId: string): Promise<void> {
+    const task = this.options.store.getTaskInfo(taskId);
+    if (["running","waiting_input","reconnecting","stopping"].includes(task.runState) && this.#sessions.has(taskId)) {
+      await this.abortTask(taskId);
+    }
+    this.options.store.setTaskDisposition(taskId, "cancelled");
+  }
+
+  async completeTask(taskId: string): Promise<void> {
+    const task = this.options.store.getTaskInfo(taskId);
+    if (["running","waiting_input","reconnecting","stopping"].includes(task.runState)) {
+      throw new Error("실행 중인 작업은 완료 처리할 수 없습니다.");
+    }
+    this.options.store.setTaskDisposition(taskId, "completed");
+  }
+
+  archiveTask(taskId: string): void {
+    this.options.store.archiveTask(taskId);
+  }
+
   async shutdown(): Promise<void> {
     for (const [taskId, session] of this.#sessions) await session.adapter.shutdown(taskId);
     this.#sessions.clear();

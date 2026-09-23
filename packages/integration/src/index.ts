@@ -148,3 +148,20 @@ export function createReviewArtifact(value: ReviewArtifact): ReviewArtifact {
     integrationActions: [...value.integrationActions],
   };
 }
+
+export async function cleanupWorktree(request: {
+  repoPath: string;
+  worktreePath: string;
+  state: CleanupState;
+}): Promise<{ removed: true; preservedBranch: true }> {
+  const blockers = cleanupBlockers(request.state);
+  if (blockers.length) throw new Error(`워크트리를 정리할 수 없습니다: ${blockers.join(", ")}`);
+  const source = await inspectRepository(request.repoPath);
+  const target = await inspectRepository(request.worktreePath);
+  if (source.repoKey !== target.repoKey) throw new Error("정리 대상이 같은 Git 저장소가 아닙니다.");
+  const targetStatus = await git(request.worktreePath, ["status", "--porcelain=v1"]);
+  if (targetStatus) throw new Error("워크트리에 미반영 변경이 있습니다.");
+  await git(source.repoPath, ["worktree", "remove", "--", request.worktreePath]);
+  // 작업 브랜치는 이력 보존을 위해 자동 삭제하지 않는다.
+  return { removed: true, preservedBranch: true };
+}

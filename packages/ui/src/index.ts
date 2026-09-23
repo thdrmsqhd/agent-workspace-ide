@@ -1,4 +1,16 @@
 export interface ProjectItem { readonly id: string; readonly name: string; readonly createdAt: string }
+export interface QueueUiItem {
+  readonly id: string;
+  readonly text: string;
+  readonly revision: number;
+  readonly state: "queued" | "dispatching" | "accepted" | "finished" | "failed" | "unknown" | "deleted";
+}
+export interface InputRequestUiItem {
+  readonly id: string;
+  readonly title?: string;
+  readonly message: string;
+  readonly options?: readonly string[];
+}
 export interface TaskItem {
   readonly id: string;
   readonly projectId: string;
@@ -9,6 +21,8 @@ export interface TaskItem {
   readonly changedFileCount: number;
   readonly pendingInputCount: number;
   readonly archived: boolean;
+  readonly queue?: readonly QueueUiItem[];
+  readonly inputRequests?: readonly InputRequestUiItem[];
 }
 export interface AgentItem {
   readonly id: string;

@@ -216,6 +216,32 @@ export class StateStore {
     });
   }
 
+
+  setTaskDisposition(taskId: string, disposition: "completed" | "cancelled"): void {
+    this.transaction(() => {
+      const task = this.getTaskInfo(taskId);
+      if (["running","waiting_input","reconnecting","stopping"].includes(task.runState)) {
+        throw new Error("실행 중인 작업은 먼저 중단해야 합니다.");
+      }
+      const changed = this.db.prepare("UPDATE tasks SET disposition=?,queue_mode='paused',revision=revision+1,updated_at=? WHERE id=? AND revision=?")
+        .run(disposition, new Date().toISOString(), taskId, task.revision);
+      if (changed.changes !== 1) throw new Error("E_REVISION_CONFLICT: 작업 상태가 변경되었습니다.");
+      this.appendEvent(taskId, "task.changed", { taskId, disposition });
+    });
+  }
+
+  archiveTask(taskId: string): void {
+    this.transaction(() => {
+      const task = this.getTaskInfo(taskId);
+      if (task.disposition === "active") throw new Error("완료 또는 취소된 작업만 보관할 수 있습니다.");
+      if (["running","waiting_input","reconnecting","stopping"].includes(task.runState)) throw new Error("실행 중인 작업은 보관할 수 없습니다.");
+      const changed = this.db.prepare("UPDATE tasks SET phase='archived',queue_mode='paused',revision=revision+1,updated_at=? WHERE id=? AND revision=?")
+        .run(new Date().toISOString(), taskId, task.revision);
+      if (changed.changes !== 1) throw new Error("E_REVISION_CONFLICT: 작업 상태가 변경되었습니다.");
+      this.appendEvent(taskId, "task.changed", { taskId, phase: "archived" });
+    });
+  }
+
   getTaskQueue(taskId: string): TaskQueue {
     const row = requireRow(this.db.prepare("SELECT id,phase,run_state,integration_state,queue_mode,revision FROM tasks WHERE id=?").get(taskId) as Row | undefined, "작업");
     const messages = this.db.prepare("SELECT id,content,attachment_ids_json,revision,queue_state FROM messages WHERE task_id=? AND delivery_mode='queued' ORDER BY queue_position").all(taskId) as Row[];
