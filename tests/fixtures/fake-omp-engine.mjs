@@ -20,7 +20,7 @@ lines.on("line", (line) => {
     return;
   }
   process.stdout.write(JSON.stringify({ type: "response", id: command.id, success: true, data: { accepted: true, agentInvoked: command.type === "prompt" } }) + "\n");
-  if (command.type === "prompt") {
+  if (command.type === "prompt" && !ignoreAbort) {
     setTimeout(() => {
       streaming = false;
       process.stdout.write(JSON.stringify({ type: "agent_end", messages: [] }) + "\n");
