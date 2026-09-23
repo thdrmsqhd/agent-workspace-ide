@@ -187,8 +187,9 @@ export class ProcessTreeSupervisor {
     return { id, ownerId: tracked.ownerId, pid: tracked.pid, method: "posix-group", forced: true };
   }
 
-  async stopOwner(ownerId: string, options: StopOptions = {}): Promise<StopResult[]> {
-    const targets = [...this.#processes.values()].filter((item) => item.ownerId === ownerId && isRunning(item.child));
+  async stopOwner(ownerId: string, options: StopOptions = {}, roles?: ReadonlySet<ProcessRole>): Promise<StopResult[]> {
+    const targets = [...this.#processes.values()].filter((item) =>
+      item.ownerId === ownerId && isRunning(item.child) && (roles === undefined || roles.has(item.role)));
     return Promise.all(targets.map((item) => this.stop(item.id, options)));
   }
 

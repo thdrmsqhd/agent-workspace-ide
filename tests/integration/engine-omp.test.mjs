@@ -1,0 +1,38 @@
+import { test } from "node:test";
+import assert from "node:assert/strict";
+import process from "node:process";
+import { fileURLToPath, URL } from "node:url";
+import { OmpEngineAdapter, discussionOverlay } from "@awi/engine-omp";
+import { ProcessTreeSupervisor } from "@awi/processes";
+
+const fixture = fileURLToPath(new URL("../fixtures/fake-omp-engine.mjs", import.meta.url));
+
+test("논의 오버레이는 읽기 도구만 열고 프로젝트 MCP를 닫는다", () => {
+  const overlay = discussionOverlay();
+  assert.deepEqual(overlay.tools, ["read","glob","grep","todo"]);
+  assert.equal(overlay.projectMcpEnabled, false);
+  assert.ok(overlay.denied.includes("bash"));
+  assert.ok(overlay.denied.includes("write"));
+});
+
+test("OMP abort가 멈추면 fallback 없이 종료 판정한다", async (t) => {
+  const supervisor = new ProcessTreeSupervisor();
+  const adapter = new OmpEngineAdapter(supervisor);
+  t.after(() => adapter.shutdown("T"));
+  await adapter.start({ taskId: "T", executable: process.execPath, args: [fixture], cwd: process.cwd() });
+  const result = await adapter.abortTask("T", 500);
+  assert.deepEqual(result, { graceful: true, fallbackUsed: false });
+});
+
+test("OMP abort가 자손 중단을 보장하지 못하면 엔진 그룹만 강제 종료하고 서버 역할은 유지한다", async (t) => {
+  const supervisor = new ProcessTreeSupervisor();
+  const adapter = new OmpEngineAdapter(supervisor);
+  const server = supervisor.start({ ownerId: "T", role: "server", executable: process.execPath, args: ["-e", "setInterval(()=>{},1000)"] });
+  t.after(() => supervisor.stopAll({ graceMs: 200, forceWaitMs: 3000 }));
+  await adapter.start({ taskId: "T", executable: process.execPath, args: [fixture, "--ignore-abort"], cwd: process.cwd() });
+  const result = await adapter.abortTask("T", 200);
+  assert.equal(result.fallbackUsed, true);
+  const snapshots = supervisor.list("T");
+  assert.equal(snapshots.find((item) => item.role === "engine").state, "exited");
+  assert.equal(snapshots.find((item) => item.pid === server.pid).state, "running");
+});
