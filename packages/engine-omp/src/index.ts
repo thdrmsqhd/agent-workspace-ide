@@ -144,23 +144,6 @@ export class OmpEngineAdapter {
     return data.sessionFile;
   }
 
-  async subscribeSubagents(level: "off" | "progress" | "events" = "progress"): Promise<Frame> {
-    return this.send({ type: "set_subagent_subscription", level });
-  }
-
-  async getSubagents(): Promise<Frame> {
-    return this.send({ type: "get_subagents" });
-  }
-
-  async getSubagentMessages(subagentId: string, fromByte?: number): Promise<Frame> {
-    return this.send({ type: "get_subagent_messages", subagentId, ...(fromByte === undefined ? {} : { fromByte }) });
-  }
-
-  respondExtensionUi(id: string, value: { value?: string; confirmed?: boolean; cancelled?: boolean; timedOut?: boolean }): void {
-    if (!id.trim()) throw new Error("extension UI 요청 ID가 필요합니다.");
-    this.sendFrame({ type: "extension_ui_response", id, ...value });
-  }
-
   async switchSession(sessionPath: string): Promise<void> {
     if (!sessionPath.trim()) throw new Error("전환할 OMP 세션 경로가 필요합니다.");
     const response = await this.send({ type: "switch_session", sessionPath });
