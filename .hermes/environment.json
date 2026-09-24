@@ -13,7 +13,7 @@
     "test": [
       "npm run lint"
     ],
-    "start": "npm run dev",
+    "start": null,
     "port": null,
     "readinessPath": "/",
     "evidence": [

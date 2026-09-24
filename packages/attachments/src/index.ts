@@ -78,6 +78,9 @@ async function fileItem(root: string, relativePath: string, explicitImage: boole
 }
 
 async function folderItem(root: string, relativePath: string): Promise<AttachmentItem> {
+  // 자식 경로는 realpath 기준으로 계산한다. 호출자가 준 root가 짧은 이름(RUNNER~1)이나
+  // 링크 경로여도 상대 경로가 어긋나지 않게 하기 위함이다.
+  const rootPath = await realpath(root);
   const path = await canonical(root, relativePath);
   const meta = await lstat(path);
   if (!meta.isDirectory() || meta.isSymbolicLink()) throw new AttachmentError("E_ATTACHMENT_UNSUPPORTED", "폴더 첨부에는 실제 디렉터리가 필요합니다.");
@@ -85,7 +88,7 @@ async function folderItem(root: string, relativePath: string): Promise<Attachmen
   const children: AttachmentItem[] = [];
   for (const entry of entries.sort((a, b) => a.name.localeCompare(b.name))) {
     if (entry.isSymbolicLink()) throw new AttachmentError("E_ATTACHMENT_BOUNDARY", `폴더 첨부에 링크가 포함되어 있습니다: ${entry.name}`);
-    const childPath = relative(root, `${path}${sep}${entry.name}`).split(sep).join("/");
+    const childPath = relative(rootPath, `${path}${sep}${entry.name}`).split(sep).join("/");
     if (entry.isDirectory()) children.push(await folderItem(root, childPath));
     else if (entry.isFile()) children.push(await fileItem(root, childPath, false));
   }
