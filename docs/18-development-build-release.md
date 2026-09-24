@@ -34,7 +34,7 @@ apps/desktop과 packages/{contracts,core,engine-omp,worktrees,processes,persiste
 | npm run test:windows | 미구현: 실제 PTY·IDE·debug 시나리오 |
 | npm run test:acceptance | 미구현: AT 시나리오 결과 생성 |
 | npm run perf:collect | 미구현: PERF 측정·원시 결과 저장 |
-| npm run package:win | 구현: scripts/package-windows-app.mjs가 ci→build→desktop install→plugins→rebuild→build→package 순서로 NSIS 설치본과 포터블을 만든다. 두 산출물은 파일명이 분리되어 있다(Setup/Portable). 네이티브 애드온 컴파일에는 Visual Studio Build Tools가 필요하고, 서명 인증서가 없으면 서명은 적용되지 않는다. 릴리스 산출물 판정은 CI desktop-windows 성공이 권위자다([검증용 빌드 기록](evidence/win-packaging/README.md)) |
+| npm run package:win | 구현: scripts/package-windows-app.mjs가 ci→build→desktop install→plugins→rebuild→build→package 순서로 NSIS 설치본과 포터블을 만든다. 두 산출물은 파일명이 분리되어 있다(Setup/Portable). 네이티브 애드온 컴파일에는 Visual Studio Build Tools가 필요하고, 서명 인증서가 없으면 서명은 적용되지 않는다. 릴리스 산출물 판정은 CI desktop-windows 성공이 권위자이며, 2026-09-24 실행(run 35989238780, 9m17s)에서 14단계 전부 통과했다([기록](evidence/win-packaging/README.md)) |
 
 각 스크립트는 실패 시 nonzero 종료해야 한다. 빈 echo로 통과시키지 않는다. 실제 OMP 시험은 별도 opt-in과 시험용 인증이 필요하며 CI에서 사용자 계정을 자동 사용하지 않는다.
 

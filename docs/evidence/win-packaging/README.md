@@ -1,4 +1,13 @@
-# 검증용 Windows 패키징 기록 (MSVC 없이 수행)
+## CI 판정 (권위자)
+
+2026-09-24, 저장소 공개 전환으로 GitHub Actions가 정상 실행되면서 release 경로 전체가 통과했다.
+
+- `desktop-windows` run [35989238780](https://github.com/thdrmsqhd/agent-workspace-ide/actions/runs/35989238780): **success**, 9m17s. 14단계 전부 success — root `npm ci` → `npm run build` → desktop `install --ignore-scripts --install-links` → `download:plugins` → `rebuild`(ffmpeg + electron native + `@vscode/windows-ca-certs`) → `theia build` → electron-builder(`nsis`+`portable`) → 아티팩트 `agent-workspace-ide-windows`(747,082,873 bytes).
+- `foundation` run [35989238691](https://github.com/thdrmsqhd/agent-workspace-ide/actions/runs/35989238691): **success** (ubuntu-latest + windows-2022 양쪽).
+
+이로써 릴리스 산출물은 MSVC + Electron 헤더로 CI에서 만들어지며, 아래 로컬 MinGW 기록은 권한이 없는 환경에서 파이프라인을 선검증할 때 쓰는 대체 경로다.
+
+## 검증용 Windows 패키징 기록 (MSVC 없이 수행)
 
 2026-09-24. 이 PC(Windows 11, Node 24.19, 관리자 권한 없음)에서 `apps/desktop`의 프로덕션 빌드·패키징을 실제로 통과시킨 기록이다. **릴리스 산출물이 아니라 파이프라인 검증용**이며, 릴리스 판정은 CI `desktop-windows`(windows-2022 + Visual Studio Build Tools + Electron 헤더) 성공이 권위자다.
 
