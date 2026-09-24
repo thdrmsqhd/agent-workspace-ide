@@ -71,6 +71,11 @@ export class ApplicationController {
   registerProject(name:string,repoPath:string,defaultBranch:string,model:string,mode:"manual"|"automatic"="manual"):Promise<string>{
     return this.runtime.registerProject(name,repoPath,defaultBranch,{engine:"omp",model,mode});
   }
+  projectSettings(projectId:string):{revision:number;settings:Record<string,unknown>}|undefined{return this.store.getSettingsSnapshot("project",projectId);}
+  updateProjectSettings(projectId:string,model:string,mode:"manual"|"automatic",expectedRevision:number):number{
+    return this.runtime.updateProjectSettings(projectId,{engine:"omp",model,mode},expectedRevision);
+  }
+  changeModel(taskId:string,provider:string,modelId:string):Promise<void>{return this.runtime.changeModel(taskId,provider,modelId);}
   createRequest(projectId:string,prompt:string):Promise<string>{return this.runtime.createDiscussion(projectId,prompt);}
   beginTask(taskId:string,baseRef?:string):Promise<void>{return this.runtime.startTask(taskId,baseRef);}
   sendTask(taskId:string,text:string,mode:"immediate"|"queued"):Promise<string|undefined>{return this.runtime.send(taskId,text,mode);}
@@ -84,9 +89,11 @@ export class ApplicationController {
     if(!taskId.trim()) throw new Error("작업 ID가 필요합니다.");
     await this.runtime.respondInput(inputRequestId,typeof response==="boolean"?{confirmed:response}:{value:response});
   }
+  attachments(taskId:string){return this.store.listAttachments(taskId);}
   async addAttachment(taskId:string,kind:"file"|"folder"|"image",relativePath:string):Promise<string>{
     return (await this.runtime.attachPath(taskId,kind,relativePath)).id;
   }
+  removeAttachment(taskId:string,attachmentId:string):void{this.runtime.removeAttachment(taskId,attachmentId);}
   addCodeSelection(taskId:string,relativePath:string,startLine:number,endLine:number,content:string):string{
     return this.runtime.attachCodeSelection(taskId,relativePath,startLine,endLine,content).id;
   }

@@ -362,6 +362,13 @@ export class StateStore {
         metadata: JSON.parse(row.metadata_json as string) as Record<string, unknown> }));
   }
 
+  deleteAttachment(taskId:string,attachmentId:string):void{
+    const changed=this.db.prepare("DELETE FROM attachments WHERE id=? AND task_id=?").run(attachmentId,taskId);
+    if(changed.changes!==1)throw new Error("첨부를 찾지 못했거나 다른 작업의 첨부입니다.");
+    this.appendEvent(taskId,"attachment.removed",{taskId,attachmentId});
+  }
+
+
   saveSettingsSnapshot(scope: "project" | "task", ownerId: string, settings: object, expectedRevision?: number): number {
     if (!ownerId.trim()) throw new Error("설정 소유자가 필요합니다.");
     const row = this.db.prepare("SELECT revision FROM settings_snapshots WHERE scope=? AND owner_id=?").get(scope, ownerId) as { revision: number } | undefined;

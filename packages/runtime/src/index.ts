@@ -241,6 +241,10 @@ export class WorkspaceRuntime {
     return attachment;
   }
 
+  removeAttachment(taskId:string,attachmentId:string):void{
+    this.options.store.deleteAttachment(taskId,attachmentId);
+  }
+
   attachCodeSelection(taskId: string, relativePath: string, startLine: number, endLine: number, content: string): AttachmentItem {
     const attachment = createCodeSelectionAttachment(relativePath, startLine, endLine, content);
     this.options.store.saveAttachment(taskId, {

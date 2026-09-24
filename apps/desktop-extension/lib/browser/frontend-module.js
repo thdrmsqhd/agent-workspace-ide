@@ -64,9 +64,14 @@ class AwiDashboardWidget extends BaseWidget{
     projectSelect.append(el("option","새 요청 프로젝트"));
     for(const p of this.data.projects){const o=el("option",p.name);o.value=p.id;projectSelect.append(o);}
     const prompt=input("새 요청");
+    const defaultModel=input("프로젝트 기본 모델");const mode=el("select");for(const v of ["manual","automatic"]){const o=el("option",v);o.value=v;mode.append(o);}
     top.append(projectSelect,prompt,button("새 요청",()=>this.action(async()=>{
       if(!projectSelect.value||!prompt.value.trim())throw new Error("프로젝트와 요청을 입력하세요.");
       const taskId=await this.service.createRequest(projectSelect.value,prompt.value);this.activeTask=taskId;
+    })),defaultModel,mode,button("프로젝트 설정 적용",()=>this.action(async()=>{
+      if(!projectSelect.value||!defaultModel.value.trim())throw new Error("프로젝트와 모델이 필요합니다.");
+      const current=await this.service.projectSettings(projectSelect.value);if(!current)throw new Error("프로젝트 설정이 없습니다.");
+      await this.service.updateProjectSettings(projectSelect.value,defaultModel.value,mode.value,current.revision);
     })));
     root.append(top);
 
@@ -103,6 +108,31 @@ class AwiDashboardWidget extends BaseWidget{
           const box=el("div",undefined,"awi-card");box.append(el("div",request.message));
           const answer=input("답변");box.append(answer,button("응답",()=>this.action(()=>this.service.respondInput(task.id,request.id,answer.value))));center.append(box);
         }
+        if(task.queue?.length){
+          center.append(el("h4","대기 지시"));
+          for(const queued of task.queue.filter(item=>item.state!=="deleted"&&item.state!=="finished")){
+            const row=el("div",undefined,"awi-card");const edit=input("대기 지시");edit.value=queued.text;
+            row.append(el("span",queued.state),edit,
+              button("수정",()=>this.action(()=>this.service.updateQueued(task.id,queued.id,queued.revision,edit.value))),
+              button("삭제",()=>this.action(()=>this.service.deleteQueued(task.id,queued.id,queued.revision))));
+            center.append(row);
+          }
+        }
+        const attachRow=el("div",undefined,"awi-card");const attachKind=el("select");
+        for(const k of ["file","folder","image"]){const o=el("option",k);o.value=k;attachKind.append(o);}
+        const attachPath=input("워크트리 상대 경로");
+        attachRow.append(attachKind,attachPath,button("첨부 추가",()=>this.action(()=>this.service.addAttachment(task.id,attachKind.value,attachPath.value))));
+        center.append(attachRow);
+        void this.service.attachments(task.id).then(items=>{
+          for(const old of center.querySelectorAll(".awi-attachment-row"))old.remove();
+          for(const item of items){const row=el("div",`${item.kind}: ${item.relativePath}`,"awi-attachment-row");
+            row.append(button("제거",()=>this.action(()=>this.service.removeAttachment(task.id,item.id))));center.append(row);}
+        }).catch(()=>undefined);
+        const taskModel=input("작업 모델(provider/model)");
+        center.append(taskModel,button("작업 모델 변경",()=>this.action(async()=>{
+          const slash=taskModel.value.indexOf("/");if(slash<1)throw new Error("provider/model 형식이 필요합니다.");
+          await this.service.changeModel(task.id,taskModel.value.slice(0,slash),taskModel.value.slice(slash+1));
+        })));
         const compose=el("textarea");compose.className="awi-compose";compose.placeholder="추가 지시";
         center.append(compose,button("즉시 전달",()=>this.action(()=>this.service.sendTask(task.id,compose.value,"immediate"))),
           button("대기열",()=>this.action(()=>this.service.sendTask(task.id,compose.value,"queued"))));

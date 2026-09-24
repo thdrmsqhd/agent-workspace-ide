@@ -38,6 +38,9 @@ class AwiBackendService {
   }
   async snapshot(){return (await this.controller()).snapshot();}
   async registerProject(name,repoPath,defaultBranch,model,mode){return (await this.controller()).registerProject(name,repoPath,defaultBranch,model,mode);}
+  async projectSettings(projectId){return (await this.controller()).projectSettings(projectId);}
+  async updateProjectSettings(projectId,model,mode,expectedRevision){return (await this.controller()).updateProjectSettings(projectId,model,mode,expectedRevision);}
+  async changeModel(taskId,provider,modelId){return (await this.controller()).changeModel(taskId,provider,modelId);}
   async createRequest(projectId,prompt){return (await this.controller()).createRequest(projectId,prompt);}
   async beginTask(taskId,baseRef){return (await this.controller()).beginTask(taskId,baseRef);}
   async sendTask(taskId,text,mode){return (await this.controller()).sendTask(taskId,text,mode);}
@@ -46,6 +49,11 @@ class AwiBackendService {
   async cancelTask(taskId){return (await this.controller()).cancelTask(taskId);}
   async archiveTask(taskId){return (await this.controller()).archiveTask(taskId);}
   async respondInput(taskId,inputRequestId,response){return (await this.controller()).respondInput(taskId,inputRequestId,response);}
+  async updateQueued(taskId,messageId,revision,text){return (await this.controller()).updateQueued(taskId,messageId,revision,text);}
+  async deleteQueued(taskId,messageId,revision){return (await this.controller()).deleteQueued(taskId,messageId,revision);}
+  async attachments(taskId){return (await this.controller()).attachments(taskId);}
+  async addAttachment(taskId,kind,relativePath){return (await this.controller()).addAttachment(taskId,kind,relativePath);}
+  async removeAttachment(taskId,attachmentId){return (await this.controller()).removeAttachment(taskId,attachmentId);}
   async syncTask(taskId){return (await this.controller()).syncTask(taskId);}
   async conversation(taskId){return (await this.controller()).conversation(taskId);}
   async files(taskId){return (await this.controller()).files(taskId);}
