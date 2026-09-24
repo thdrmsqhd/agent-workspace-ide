@@ -5,6 +5,7 @@ import { parseCommandEnvelope, parseQueueCommand } from "@awi/contracts";
 const taskId = "11111111-1111-4111-8111-111111111111";
 const requestId = "22222222-2222-4222-8222-222222222222";
 const messageId = "33333333-3333-4333-8333-333333333333";
+const attachmentDigest = "a".repeat(64);
 
 function command(method, payload, expectedRevision = 0) {
   return { apiVersion: 1, requestId, method, taskId, expectedRevision, payload };
@@ -12,6 +13,7 @@ function command(method, payload, expectedRevision = 0) {
 
 test("큐 명령은 ID, revision, 입력 범위와 빈 지시를 검증한다", () => {
   assert.equal(parseQueueCommand(command("task.send", { text: "  ", attachmentIds: [messageId], delivery: "queued" })).method, "task.send");
+  assert.equal(parseQueueCommand(command("task.send", { text: "  ", attachmentIds: [attachmentDigest], delivery: "queued" })).method, "task.send");
   for (const input of [
     command("task.send", { text: " ", attachmentIds: [], delivery: "queued" }),
     command("task.send", { text: "작업", attachmentIds: [], delivery: "later" }),

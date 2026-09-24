@@ -19,6 +19,17 @@ export interface AttachmentItem {
   };
 }
 
+export interface PromptImageContent {
+  readonly type: "image";
+  readonly data: string;
+  readonly mimeType: string;
+}
+
+export interface PromptAttachmentPayload {
+  readonly text: string;
+  readonly images: readonly PromptImageContent[];
+}
+
 export class AttachmentError extends Error {
   constructor(public readonly code: "E_ATTACHMENT_UNSUPPORTED" | "E_ATTACHMENT_BOUNDARY" | "E_ATTACHMENT_IO", message: string) {
     super(message);
@@ -100,4 +111,71 @@ export function createCodeSelectionAttachment(relativePath: string, startLine: n
     size,
     code: { startLine, endLine, content },
   };
+}
+
+
+const imageMimeTypes = new Map<string, string>([
+  [".png", "image/png"],
+  [".jpg", "image/jpeg"],
+  [".jpeg", "image/jpeg"],
+  [".gif", "image/gif"],
+  [".webp", "image/webp"],
+]);
+
+function decodeText(bytes: Buffer, relativePath: string): string {
+  try {
+    return new TextDecoder("utf-8", { fatal: true }).decode(bytes);
+  } catch {
+    throw new AttachmentError("E_ATTACHMENT_UNSUPPORTED", `UTF-8 텍스트로 전달할 수 없는 파일입니다: ${relativePath}`);
+  }
+}
+
+async function materializeItem(root: string, item: AttachmentItem, images: PromptImageContent[]): Promise<string> {
+  if (item.kind === "image") {
+    const extension = extname(item.relativePath).toLowerCase();
+    const mimeType = imageMimeTypes.get(extension);
+    if (!mimeType) throw new AttachmentError("E_ATTACHMENT_UNSUPPORTED", `지원하지 않는 이미지 형식입니다: ${extension || "확장자 없음"}`);
+    const path = await canonical(root, item.relativePath);
+    const bytes = await readFile(path);
+    images.push({ type: "image", data: bytes.toString("base64"), mimeType });
+    return [
+      "[AWI image attachment]",
+      `path: ${item.relativePath}`,
+      `imageIndex: ${images.length}`,
+      "[/AWI image attachment]",
+    ].join("\n");
+  }
+  if (item.kind === "file") {
+    const path = await canonical(root, item.relativePath);
+    const bytes = await readFile(path);
+    return [
+      "[AWI file attachment]",
+      `path: ${item.relativePath}`,
+      "content:",
+      decodeText(bytes, item.relativePath),
+      "[/AWI file attachment]",
+    ].join("\n");
+  }
+  if (item.kind === "folder") {
+    const sections: string[] = [];
+    for (const child of item.children ?? []) sections.push(await materializeItem(root, child, images));
+    return [
+      "[AWI folder attachment]",
+      `path: ${item.relativePath}`,
+      sections.join("\n\n"),
+      "[/AWI folder attachment]",
+    ].filter(Boolean).join("\n");
+  }
+  throw new AttachmentError("E_ATTACHMENT_UNSUPPORTED", "경로 첨부로 처리할 수 없는 첨부 형식입니다.");
+}
+
+export async function materializePathAttachment(
+  root: string,
+  relativePath: string,
+  kind: "file" | "folder" | "image",
+): Promise<PromptAttachmentPayload> {
+  const item = await createPathAttachment(root, relativePath, kind);
+  const images: PromptImageContent[] = [];
+  const text = await materializeItem(root, item, images);
+  return { text, images };
 }

@@ -19,7 +19,7 @@ lines.on("line", (line) => {
     process.stdout.write(JSON.stringify({ type: "response", id: command.id, success: true, data: { sessionFile: command.sessionPath } }) + "\n");
     return;
   }
-  process.stdout.write(JSON.stringify({ type: "response", id: command.id, success: true, data: { accepted: true, agentInvoked: command.type === "prompt" } }) + "\n");
+  process.stdout.write(JSON.stringify({ type: "response", id: command.id, success: true, data: { accepted: true, agentInvoked: command.type === "prompt", received: command } }) + "\n");
   if (command.type === "prompt" && !ignoreAbort) {
     setTimeout(() => {
       streaming = false;

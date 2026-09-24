@@ -47,3 +47,20 @@ test("하위 에이전트 구독과 extension UI 응답은 RPC 명령/프레임 
   assert.equal(list.success,true);
   adapter.respondExtensionUi("ui-1",{value:"answer"});
 });
+
+
+test("prompt와 steer는 OMP 공식 images 필드를 사용하고 임의 attachments 필드를 보내지 않는다", async (t) => {
+  const supervisor = new ProcessTreeSupervisor();
+  const adapter = new OmpEngineAdapter(supervisor);
+  t.after(() => adapter.shutdown("T"));
+  await adapter.start({ taskId: "T", executable: process.execPath, args: [fixture], cwd: process.cwd() });
+  const image = { type: "image", data: "AQID", mimeType: "image/png" };
+
+  const prompted = await adapter.prompt("이미지 확인", [image]);
+  assert.deepEqual(prompted.data.received.images, [image]);
+  assert.equal("attachments" in prompted.data.received, false);
+
+  const steered = await adapter.steer("추가 확인", [image]);
+  assert.deepEqual(steered.data.received.images, [image]);
+  assert.equal("attachments" in steered.data.received, false);
+});

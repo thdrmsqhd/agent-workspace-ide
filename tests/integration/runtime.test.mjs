@@ -1,6 +1,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { execFile } from "node:child_process";
+import { Buffer } from "node:buffer";
 import { mkdtemp, mkdir, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
@@ -66,4 +67,55 @@ test("프로젝트 등록→논의→명시적 워크트리 시작→대기열 �
   assert.equal(store.getTaskQueue(taskId).runState,"paused");
   await runtime.resumeTask(taskId);
   assert.equal(store.getTaskQueue(taskId).runState,"running");
+});
+
+
+test("저장된 첨부를 실제 OMP message/images 계약으로 변환한다", async (t) => {
+  const root = await mkdtemp(join(tmpdir(), "awi-runtime-attachments-"));
+  t.after(() => rm(root, { recursive: true, force: true }));
+  const repo = join(root, "repo");
+  await mkdir(repo);
+  await mkdir(join(repo, "docs"));
+  await writeFile(join(repo, "docs", "note.txt"), "attached text\n");
+  await writeFile(join(repo, "diagram.png"), Buffer.from([9, 8, 7]));
+
+  const store = await StateStore.open(join(root, "state.sqlite"));
+  const supervisor = new ProcessTreeSupervisor();
+  const settings = new SettingsRegistry();
+  const prompts = [];
+  const adapter = {
+    async setSubagentSubscription() {},
+    async prompt(message, images = []) { prompts.push({ type: "prompt", message, images }); return { data: { agentInvoked: false } }; },
+    async steer(message, images = []) { prompts.push({ type: "steer", message, images }); return { data: {} }; },
+    async state() { return { data: { isStreaming: false } }; },
+    async sessionFile() { return "recording-session.jsonl"; },
+    async shutdown() {},
+  };
+  const runtime = new WorkspaceRuntime({
+    store, settings, supervisor, engineFactory: { async create() { return adapter; } },
+    worktreeRoot: join(root, "worktrees"), journalDirectory: join(root, "journals"),
+  });
+  t.after(async () => { await runtime.shutdown(); store.close(); });
+
+  const projectId = store.createProject("P", repo, "runtime-attachment-" + Date.now(), "main");
+  settings.setProjectDefault(projectId, { engine: "omp", model: "fake", mode: "manual" });
+  const taskId = await runtime.createDiscussion(projectId, "초기 요청");
+  const folder = await runtime.attachPath(taskId, "folder", "docs");
+  const image = await runtime.attachPath(taskId, "image", "diagram.png");
+  const code = runtime.attachCodeSelection(taskId, "src/example.ts", 3, 4, "const selected = true;");
+
+  await runtime.send(taskId, "첨부를 검토해줘", "immediate", [folder.id, image.id, code.id]);
+  const sent = prompts.at(-1);
+  assert.equal(sent.type, "prompt");
+  assert.match(sent.message, /첨부를 검토해줘/);
+  assert.match(sent.message, /path: docs\/note\.txt/);
+  assert.match(sent.message, /attached text/);
+  assert.match(sent.message, /path: src\/example\.ts/);
+  assert.match(sent.message, /lines: 3-4/);
+  assert.match(sent.message, /const selected = true/);
+  assert.deepEqual(sent.images, [{
+    type: "image",
+    data: Buffer.from([9, 8, 7]).toString("base64"),
+    mimeType: "image/png",
+  }]);
 });

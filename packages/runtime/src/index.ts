@@ -1,5 +1,11 @@
 import { randomUUID } from "node:crypto";
-import { createCodeSelectionAttachment, createPathAttachment, type AttachmentItem } from "@awi/attachments";
+import {
+  createCodeSelectionAttachment,
+  createPathAttachment,
+  materializePathAttachment,
+  type AttachmentItem,
+  type PromptImageContent,
+} from "@awi/attachments";
 import { mkdir, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 import { acquireSlot, releaseSlot } from "@awi/core";
@@ -94,6 +100,53 @@ export class WorkspaceRuntime {
     return snapshot;
   }
 
+  private async prepareEngineInput(
+    taskId: string,
+    text: string,
+    attachmentIds: readonly string[],
+  ): Promise<{ message: string; images: PromptImageContent[] }> {
+    if (attachmentIds.length === 0) return { message: text, images: [] };
+    const task = this.options.store.getTaskInfo(taskId);
+    const project = this.options.store.getProjectInfo(task.projectId);
+    const root = task.worktreePath ?? project.repoPath;
+    const stored = new Map(this.options.store.listAttachments(taskId).map((attachment) => [attachment.id, attachment]));
+    const context: string[] = [];
+    const images: PromptImageContent[] = [];
+
+    for (const attachmentId of attachmentIds) {
+      const attachment = stored.get(attachmentId);
+      if (!attachment) throw new Error(`첨부를 찾지 못했거나 다른 작업의 첨부입니다: ${attachmentId}`);
+      if (attachment.kind === "code-selection") {
+        const code = attachment.metadata.code;
+        if (!code || typeof code !== "object" || Array.isArray(code)) throw new Error("저장된 코드 선택 첨부가 손상되었습니다.");
+        const value = code as Record<string, unknown>;
+        if (!Number.isInteger(value.startLine) || !Number.isInteger(value.endLine) || typeof value.content !== "string") {
+          throw new Error("저장된 코드 선택 첨부가 손상되었습니다.");
+        }
+        context.push([
+          "[AWI code selection]",
+          `path: ${attachment.relativePath}`,
+          `lines: ${value.startLine as number}-${value.endLine as number}`,
+          "content:",
+          value.content,
+          "[/AWI code selection]",
+        ].join("\n"));
+        continue;
+      }
+      if (attachment.kind !== "file" && attachment.kind !== "folder" && attachment.kind !== "image") {
+        throw new Error(`지원하지 않는 첨부 형식입니다: ${attachment.kind}`);
+      }
+      const payload = await materializePathAttachment(root, attachment.relativePath, attachment.kind);
+      context.push(payload.text);
+      images.push(...payload.images);
+    }
+
+    const parts: string[] = [];
+    if (text.trim()) parts.push(text);
+    if (context.length) parts.push(`<awi_context>\n${context.join("\n\n")}\n</awi_context>`);
+    return { message: parts.join("\n\n"), images };
+  }
+
   async registerProject(name: string, repoPath: string, defaultBranch: string, defaults: AgentSettings): Promise<string> {
     const repo = await inspectRepository(repoPath);
     const existing = this.options.store.findProjectByRepoKey(repo.repoKey);
@@ -170,11 +223,12 @@ export class WorkspaceRuntime {
       return result.messageId;
     }
     const session = this.requireSession(taskId);
+    const input = await this.prepareEngineInput(taskId, text, attachmentIds);
     const state = await session.adapter.state();
     const data = state.data;
     const streaming = typeof data === "object" && data !== null && !Array.isArray(data) && data.isStreaming === true;
-    if (streaming) await session.adapter.steer(text);
-    else await session.adapter.prompt(text, attachmentIds.map((id) => ({ id })));
+    if (streaming) await session.adapter.steer(input.message, input.images);
+    else await session.adapter.prompt(input.message, input.images);
     this.options.store.recordImmediateMessage(taskId, "user", text, attachmentIds);
     return undefined;
   }
@@ -184,7 +238,8 @@ export class WorkspaceRuntime {
     if (!item) return false;
     const session = this.requireSession(taskId);
     try {
-      const response = await session.adapter.prompt(item.text, item.attachmentIds.map((id) => ({ id })));
+      const input = await this.prepareEngineInput(taskId, item.text, item.attachmentIds);
+      const response = await session.adapter.prompt(input.message, input.images);
       this.options.store.markDispatchAccepted(taskId, item.id);
       const data = response.data;
       const localOnly = typeof data === "object" && data !== null && !Array.isArray(data) && data.agentInvoked === false;

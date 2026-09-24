@@ -7,6 +7,12 @@ type Json = null | boolean | number | string | Json[] | { [key: string]: Json };
 type Frame = { [key: string]: Json };
 export type RpcFrame = Frame;
 
+export interface OmpImageContent {
+  readonly type: "image";
+  readonly data: string;
+  readonly mimeType: string;
+}
+
 interface Pending {
   readonly resolve: (value: Frame) => void;
   readonly reject: (error: Error) => void;
@@ -121,14 +127,16 @@ export class OmpEngineAdapter {
     });
   }
 
-  async prompt(message: string, attachments: readonly Json[] = []): Promise<Frame> {
-    if (!message.trim() && attachments.length === 0) throw new Error("전달할 지시나 첨부가 필요합니다.");
-    return this.send({ type: "prompt", message, attachments: [...attachments] });
+  async prompt(message: string, images: readonly OmpImageContent[] = []): Promise<Frame> {
+    if (!message.trim() && images.length === 0) throw new Error("전달할 지시나 첨부가 필요합니다.");
+    const payload: Json[] = images.map((image) => ({ type: "image", data: image.data, mimeType: image.mimeType }));
+    return this.send({ type: "prompt", message, ...(payload.length ? { images: payload } : {}) });
   }
 
-  async steer(message: string): Promise<Frame> {
-    if (!message.trim()) throw new Error("즉시 지시가 비어 있습니다.");
-    return this.send({ type: "steer", message });
+  async steer(message: string, images: readonly OmpImageContent[] = []): Promise<Frame> {
+    if (!message.trim() && images.length === 0) throw new Error("즉시 지시나 첨부가 필요합니다.");
+    const payload: Json[] = images.map((image) => ({ type: "image", data: image.data, mimeType: image.mimeType }));
+    return this.send({ type: "steer", message, ...(payload.length ? { images: payload } : {}) });
   }
 
   async state(): Promise<Frame> {

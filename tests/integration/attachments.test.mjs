@@ -4,7 +4,7 @@ import assert from "node:assert/strict";
 import { mkdtemp, mkdir, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { createCodeSelectionAttachment, createPathAttachment } from "@awi/attachments";
+import { createCodeSelectionAttachment, createPathAttachment, materializePathAttachment } from "@awi/attachments";
 
 test("파일·폴더·이미지·코드 범위를 작업 경계 안에서 첨부한다", async (t) => {
   const root = await mkdtemp(join(tmpdir(), "awi-attach-"));
@@ -21,4 +21,24 @@ test("파일·폴더·이미지·코드 범위를 작업 경계 안에서 첨부
   assert.deepEqual(code.code.startLine, 2);
   await assert.rejects(createPathAttachment(root, "../outside", "file"), /읽을 수|경계/);
   await assert.rejects(createPathAttachment(root, "docs/a.txt", "image"), /지원하지 않는 이미지/);
+});
+
+
+test("OMP 전달용 첨부는 텍스트 컨텍스트와 ImageContent로 실체화한다", async (t) => {
+  const root = await mkdtemp(join(tmpdir(), "awi-attach-prompt-"));
+  t.after(() => rm(root, { recursive: true, force: true }));
+  await mkdir(join(root, "docs"));
+  await writeFile(join(root, "docs", "a.txt"), "alpha\nbeta\n");
+  await writeFile(join(root, "docs", "pic.png"), Buffer.from([1, 2, 3, 4]));
+
+  const payload = await materializePathAttachment(root, "docs", "folder");
+  assert.match(payload.text, /path: docs\/a\.txt/);
+  assert.match(payload.text, /alpha\nbeta/);
+  assert.match(payload.text, /path: docs\/pic\.png/);
+  assert.equal(payload.images.length, 1);
+  assert.deepEqual(payload.images[0], {
+    type: "image",
+    data: Buffer.from([1, 2, 3, 4]).toString("base64"),
+    mimeType: "image/png",
+  });
 });

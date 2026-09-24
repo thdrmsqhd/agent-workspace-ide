@@ -2,7 +2,7 @@ import { createHash, randomUUID } from "node:crypto";
 import { mkdir, stat } from "node:fs/promises";
 import { dirname, join } from "node:path";
 import { backup, DatabaseSync } from "node:sqlite";
-import { isUuid, parseQueueCommand, type QueueCommand } from "@awi/contracts";
+import { isAttachmentId, isUuid, parseQueueCommand, type QueueCommand } from "@awi/contracts";
 import {
   abort, claimNext, confirmStopped, deleteQueued, enqueue, markUnknown,
   resume, updateQueued, type QueuedMessage, type TaskQueue,
@@ -298,7 +298,7 @@ export class StateStore {
   }
 
   saveDraft(draft: SavedDraft, expectedRevision: number): SavedDraft {
-    if (!isUuid(draft.ownerId) || !draft.attachmentIds.every(isUuid)) throw new Error("초안 참조 ID가 올바르지 않습니다.");
+    if (!isUuid(draft.ownerId) || !draft.attachmentIds.every(isAttachmentId)) throw new Error("초안 참조 ID가 올바르지 않습니다.");
     return this.transaction(() => {
       const before = this.getDraft(draft.scope, draft.ownerId);
       if ((before?.revision ?? 0) !== expectedRevision) throw new Error("E_REVISION_CONFLICT: 초안이 변경되었습니다.");

@@ -94,7 +94,7 @@ export function parseQueueCommand(value: unknown): QueueCommand {
     case "task.resume":
       if (!hasOnly(p, ["text", "attachmentIds"]) ||
           (p.text !== undefined && typeof p.text !== "string") ||
-          (p.attachmentIds !== undefined && !isUuidArray(p.attachmentIds)) ||
+          (p.attachmentIds !== undefined && !isAttachmentIdArray(p.attachmentIds)) ||
           ((p.text !== undefined || p.attachmentIds !== undefined) &&
            !isMessage(p.text ?? "", p.attachmentIds ?? []))) break;
       return command as unknown as QueueCommand;
@@ -129,7 +129,15 @@ function isUuidArray(value: unknown): value is string[] {
   return Array.isArray(value) && value.every(isUuid);
 }
 
+export function isAttachmentId(value: unknown): value is string {
+  return isUuid(value) || (typeof value === "string" && /^[0-9a-f]{64}$/i.test(value));
+}
+
+function isAttachmentIdArray(value: unknown): value is string[] {
+  return Array.isArray(value) && value.every(isAttachmentId);
+}
+
 function isMessage(text: unknown, attachmentIds: unknown): boolean {
-  return typeof text === "string" && isUuidArray(attachmentIds) &&
+  return typeof text === "string" && isAttachmentIdArray(attachmentIds) &&
     (text.trim().length > 0 || (attachmentIds as string[]).length > 0);
 }
