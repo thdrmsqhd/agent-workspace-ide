@@ -40,7 +40,7 @@
   "scripts": {
     "rebuild": "theia rebuild:electron --cacheRoot ..",
     "build": "theia build --app-target=electron --mode production",
-    "download:plugins": "theia download:plugins",
+    "download:plugins": "node ../../scripts/download-desktop-plugins.mjs",
     "start": "theia start",
     "package": "electron-builder --win nsis portable --publish never",
     "package:preview": "electron-builder --dir --publish never"
@@ -54,7 +54,8 @@
     "vscjava.vscode-java-debug": "https://open-vsx.org/api/vscjava/vscode-java-debug/0.59.0/file/vscjava.vscode-java-debug-0.59.0.vsix",
     "ms-python.python": "https://open-vsx.org/api/ms-python/python/2026.4.0/file/ms-python.python-2026.4.0.vsix",
     "ms-python.debugpy": "https://open-vsx.org/api/ms-python/debugpy/2026.6.0/file/ms-python.debugpy-2026.6.0.vsix",
-    "vscode-icons-team.vscode-icons": "https://open-vsx.org/api/vscode-icons-team/vscode-icons/12.19.0/file/vscode-icons-team.vscode-icons-12.19.0.vsix"
+    "vscode-icons-team.vscode-icons": "https://open-vsx.org/api/vscode-icons-team/vscode-icons/12.19.0/file/vscode-icons-team.vscode-icons-12.19.0.vsix",
+    "ms-python.vscode-python-envs": "https://open-vsx.org/api/ms-python/vscode-python-envs/1.36.0/file/ms-python.vscode-python-envs-1.36.0.vsix"
   },
   "productName": "Agent Workspace IDE",
   "main": "lib/backend/electron-main.js",
