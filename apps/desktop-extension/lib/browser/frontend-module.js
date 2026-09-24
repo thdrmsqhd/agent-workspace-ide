@@ -41,6 +41,7 @@ class AwiDashboardWidget extends BaseWidget{
   constructor(service,opener){
     super();
     this.service=service;this.opener=opener;this.data={projects:[],tasks:[],agents:[]};this.activeTask=undefined;
+    this.importPreview=undefined;this.importSelected=new Set();
     this.id=WIDGET_ID;this.title.label="Agent Workspace";this.title.caption="Agent Workspace";this.title.closable=false;
     this.node.classList.add("awi-dashboard-root");
     void this.refresh();
@@ -89,6 +90,36 @@ class AwiDashboardWidget extends BaseWidget{
       await this.service.updateProjectSettings(projectSelect.value,defaultModel.value,mode.value,current.revision);
     })));
     root.append(top);
+
+    const importBox=el("details",undefined,"awi-card");importBox.append(el("summary","기존 OMP 세션 가져오기"));
+    const importProject=el("select");importProject.append(el("option","프로젝트 선택"));
+    for(const p of this.data.projects){const o=el("option",p.name);o.value=p.id;importProject.append(o);}
+    const sessionPath=input("기존 OMP 세션 경로");const sourcePath=input("원본 Git 작업폴더(선택 변경)");
+    const importPrompt=input("연결 작업 설명");const importBase=input("기준 브랜치");importBase.value="main";
+    importBox.append(importProject,sessionPath,sourcePath,importPrompt,importBase,
+      button("변경 미리보기",()=>this.action(async()=>{
+        if(!sourcePath.value.trim())throw new Error("원본 작업폴더 경로가 필요합니다.");
+        this.importPreview=await this.service.previewImport(sourcePath.value);
+        this.importSelected=new Set(this.importPreview.files.map(f=>f.id));this.update();
+      })));
+    if(this.importPreview){
+      const list=el("div");
+      for(const file of this.importPreview.files){
+        const label=el("label");const check=el("input");check.type="checkbox";check.checked=this.importSelected.has(file.id);
+        check.onchange=()=>check.checked?this.importSelected.add(file.id):this.importSelected.delete(file.id);
+        label.append(check,document.createTextNode(` ${file.kind} · ${file.oldPath||""}${file.newPath&&file.oldPath!==file.newPath?" → "+file.newPath:file.newPath||""}`));list.append(label,el("br"));
+      }
+      importBox.append(list,button("선택 항목으로 세션 가져오기",()=>this.action(async()=>{
+        if(!importProject.value||!sessionPath.value.trim())throw new Error("프로젝트와 OMP 세션 경로가 필요합니다.");
+        const taskId=await this.service.importExistingSession({
+          projectId:importProject.value,originalPrompt:importPrompt.value||"기존 세션 이어가기",
+          sessionPath:sessionPath.value,baseRef:importBase.value||"main",
+          sourcePath:sourcePath.value||undefined,selectedChangeIds:[...this.importSelected]
+        });
+        this.activeTask=taskId;this.importPreview=undefined;this.importSelected.clear();
+      })));
+    }
+    root.append(importBox);
 
     const body=el("div",undefined,"awi-body");
     const left=el("section",undefined,"awi-pane");left.append(el("h3","파일"));

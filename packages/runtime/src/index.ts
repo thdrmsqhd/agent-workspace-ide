@@ -256,6 +256,10 @@ export class WorkspaceRuntime {
     return attachment;
   }
 
+  async previewExistingChanges(sourcePath:string) {
+    return previewChanges(sourcePath);
+  }
+
   async importExistingSession(input: {
     projectId: string;
     originalPrompt: string;

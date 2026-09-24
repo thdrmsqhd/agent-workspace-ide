@@ -78,6 +78,10 @@ export class ApplicationController {
     return this.runtime.updateProjectSettings(projectId,{engine:"omp",model,mode},expectedRevision);
   }
   changeModel(taskId:string,provider:string,modelId:string):Promise<void>{return this.runtime.changeModel(taskId,provider,modelId);}
+  previewImport(sourcePath:string){return this.runtime.previewExistingChanges(sourcePath);}
+  importExistingSession(input:{projectId:string;originalPrompt:string;sessionPath:string;baseRef?:string;sourcePath?:string;selectedChangeIds?:readonly string[]}):Promise<string>{
+    return this.runtime.importExistingSession(input);
+  }
   createRequest(projectId:string,prompt:string):Promise<string>{return this.runtime.createDiscussion(projectId,prompt);}
   beginTask(taskId:string,baseRef?:string):Promise<void>{return this.runtime.startTask(taskId,baseRef);}
   sendTask(taskId:string,text:string,mode:"immediate"|"queued"):Promise<string|undefined>{return this.runtime.send(taskId,text,mode);}

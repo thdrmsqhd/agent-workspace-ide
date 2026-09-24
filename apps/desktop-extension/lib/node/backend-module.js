@@ -41,6 +41,8 @@ class AwiBackendService {
   async projectSettings(projectId){return (await this.controller()).projectSettings(projectId);}
   async updateProjectSettings(projectId,model,mode,expectedRevision){return (await this.controller()).updateProjectSettings(projectId,model,mode,expectedRevision);}
   async changeModel(taskId,provider,modelId){return (await this.controller()).changeModel(taskId,provider,modelId);}
+  async previewImport(sourcePath){return (await this.controller()).previewImport(sourcePath);}
+  async importExistingSession(input){return (await this.controller()).importExistingSession(input);}
   async createRequest(projectId,prompt){return (await this.controller()).createRequest(projectId,prompt);}
   async beginTask(taskId,baseRef){return (await this.controller()).beginTask(taskId,baseRef);}
   async sendTask(taskId,text,mode){return (await this.controller()).sendTask(taskId,text,mode);}
