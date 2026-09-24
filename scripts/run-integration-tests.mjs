@@ -19,7 +19,7 @@ async function killTree(child){
     });
     return;
   }
-  try{process.kill(-child.pid,"SIGKILL");}catch{}
+  try{process.kill(-child.pid,"SIGKILL");}catch{/* 이미 종료된 자손 프로세스 그룹은 무시한다 */}
 }
 
 for(const file of files){
