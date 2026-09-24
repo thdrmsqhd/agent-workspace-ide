@@ -6,6 +6,8 @@ test("제품 데스크톱 구성은 독립 Electron 타깃과 고정 확장을 �
  const pkg=JSON.parse(await readFile("apps/desktop/package.json","utf8"));
  assert.equal(pkg.theia.target,"electron");
  assert.equal(pkg.dependencies["@theia/electron"],"1.75.0");
+ assert.match(pkg.scripts.rebuild,/rebuild:ffmpeg/);
+ assert.match(pkg.scripts["rebuild:ffmpeg"],/@theia\/ffmpeg/);
  assert.ok(pkg.theiaPlugins["redhat.java"]);
  assert.ok(pkg.theiaPlugins["ms-python.python"]);
  assert.ok(pkg.theiaPlugins["vscode-icons-team.vscode-icons"]);
