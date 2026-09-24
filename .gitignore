@@ -13,3 +13,7 @@ apps/ide-verification-host/lib/
 apps/ide-verification-host/src-gen/
 apps/ide-verification-host/plugins/
 apps/ide-verification-host/package-lock.json
+apps/desktop/lib/
+apps/desktop/src-gen/
+apps/desktop/plugins/
+apps/desktop/package-lock.json
