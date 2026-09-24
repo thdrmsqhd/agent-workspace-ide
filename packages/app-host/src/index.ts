@@ -110,7 +110,7 @@ export class ApplicationController {
     const project=this.store.getProjectInfo(task.projectId);
     const root=task.worktreePath ?? project.repoPath;
     const committed=await exec("git",["diff","--name-only",`${project.defaultBranch}...HEAD`],{cwd:root,encoding:"utf8",windowsHide:true,timeout:10_000}).then(r=>r.stdout.split(/\r?\n/u).filter(Boolean),()=>[]);
-    const status=await exec("git",["status","--porcelain=v1"],{cwd:root,encoding:"utf8",windowsHide:true,timeout:10_000}).then(r=>r.stdout.split(/\r?\n/u).filter(Boolean).map(line=>line.slice(3).split(" -> ").at(-1)).filter(Boolean),()=>[]);
+    const status=await exec("git",["status","--porcelain=v1"],{cwd:root,encoding:"utf8",windowsHide:true,timeout:10_000}).then(r=>r.stdout.split(/\r?\n/u).filter(Boolean).map(line=>line.slice(3).split(" -> ").at(-1)).filter((path):path is string=>typeof path==="string"&&path.length>0),()=>[]);
     const changedFiles=[...new Set([...committed,...status])].sort();
     const artifact=this.store.latestArtifact(taskId,"review");
     const checks=Array.isArray(artifact?.metadata.checks)
