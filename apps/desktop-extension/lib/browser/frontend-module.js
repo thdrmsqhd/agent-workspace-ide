@@ -7,6 +7,7 @@ const {
 }=require("@theia/core/lib/browser");
 const URI=require("@theia/core/lib/common/uri").default;
 const { CommandRegistry }=require("@theia/core/lib/common");
+const { WorkspaceService }=require("@theia/workspace/lib/browser");
 const { AWI_SERVICE_PATH }=require("../common/protocol");
 const WIDGET_ID="awi.dashboard";
 
@@ -39,20 +40,32 @@ function renderReviewDiff(container,result){
 }
 
 class AwiDashboardWidget extends BaseWidget{
-  constructor(service,opener,commands){
+  constructor(service,opener,commands,workspace){
     super();
-    this.service=service;this.opener=opener;this.commands=commands;this.data={projects:[],tasks:[],agents:[]};this.activeTask=undefined;
+    this.service=service;this.opener=opener;this.commands=commands;this.workspace=workspace;this.data={projects:[],tasks:[],agents:[]};this.activeTask=undefined;
     this.importPreview=undefined;this.importSelected=new Set();
     this.id=WIDGET_ID;this.title.label="Agent Workspace";this.title.caption="Agent Workspace";this.title.closable=false;
     this.node.classList.add("awi-dashboard-root");
     void this.refresh();
+  }
+  async ensureTaskRoot(taskId){
+    const ctx=await this.service.taskContext(taskId);
+    const uri=new URI(ctx.rootUri);
+    const roots=this.workspace.tryGetRoots();
+    if(!roots.some(root=>root.resource.toString()===uri.toString()))await this.workspace.addRoot(uri);
+    return ctx;
   }
   async refresh(){
     this.data=await this.service.snapshot();
     if(this.activeTask && !this.data.tasks.some(t=>t.id===this.activeTask))this.activeTask=undefined;
     this.update();
   }
-  async selectTask(taskId){this.activeTask=taskId;await this.service.syncTask(taskId).catch(()=>undefined);this.update();}
+  async selectTask(taskId){
+    this.activeTask=taskId;
+    await this.ensureTaskRoot(taskId).catch(()=>undefined);
+    await this.service.syncTask(taskId).catch(()=>undefined);
+    this.update();
+  }
   async action(fn){try{await fn();await this.refresh();}catch(error){window.alert(error instanceof Error?error.message:String(error));}}
   onUpdateRequest(){
     const root=this.node;root.replaceChildren();
@@ -141,7 +154,7 @@ class AwiDashboardWidget extends BaseWidget{
       if(task){
         center.append(el("div",task.originalPrompt,"awi-card"));
         const controls=el("div");
-        if(task.status==="idle"||task.status==="discussion")controls.append(button("작업 시작",()=>this.action(()=>this.service.beginTask(task.id))));
+        if(task.status==="idle"||task.status==="discussion")controls.append(button("작업 시작",()=>this.action(async()=>{await this.service.beginTask(task.id);await this.ensureTaskRoot(task.id);})));
         if(task.status==="running")controls.append(button("중단",()=>this.action(()=>this.service.abortTask(task.id))));
         if(task.status==="paused")controls.append(button("재개",()=>this.action(()=>this.service.resumeTask(task.id))));
         controls.append(button("취소",()=>this.action(()=>this.service.cancelTask(task.id))));
@@ -228,7 +241,7 @@ exports.default=new ContainerModule(bind=>{
   bind("AwiBackendProxy").toDynamicValue(ctx=>ctx.container.get(WebSocketConnectionProvider).createProxy(AWI_SERVICE_PATH)).inSingletonScope();
   bind(WidgetFactory).toDynamicValue(ctx=>({
     id:WIDGET_ID,
-    createWidget:()=>new AwiDashboardWidget(ctx.container.get("AwiBackendProxy"),ctx.container.get(OpenerService),ctx.container.get(CommandRegistry))
+    createWidget:()=>new AwiDashboardWidget(ctx.container.get("AwiBackendProxy"),ctx.container.get(OpenerService),ctx.container.get(CommandRegistry),ctx.container.get(WorkspaceService))
   })).inSingletonScope();
   bind(FrontendApplicationContribution).toDynamicValue(ctx=>({
     initializeLayout:async app=>{
