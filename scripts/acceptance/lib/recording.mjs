@@ -2,6 +2,7 @@ import { execFile } from "node:child_process";
 import { copyFile, mkdir, writeFile } from "node:fs/promises";
 import { dirname, join, resolve } from "node:path";
 import process from "node:process";
+import { clearInterval, setInterval } from "node:timers";
 import { promisify } from "node:util";
 
 const run = promisify(execFile);
@@ -105,7 +106,6 @@ export async function assembleMp4({ frames, outPath, fps = 15, width = 1280, cap
 }
 
 function captionFilter(captions) {
-  const font = process.env.AWI_CAPTION_FONT ?? "C:/Windows/Fonts/malgun.ttf";
   const sorted = [...captions].filter((item) => item?.text).sort((left, right) => left.atMs - right.atMs);
   if (sorted.length === 0) return "";
   const lastAt = sorted.at(-1).atMs;
