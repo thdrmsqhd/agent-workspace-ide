@@ -22,13 +22,16 @@
   },
   "devDependencies": {
     "@theia/cli": "1.75.0",
-    "electron": "42.8.1"
+    "electron": "42.8.1",
+    "electron-builder": "26.0.12"
   },
   "scripts": {
     "rebuild": "theia rebuild:electron --cacheRoot ..",
-    "build": "theia build --mode production",
+    "build": "theia build --app-target=electron --mode production",
     "download:plugins": "theia download:plugins",
-    "start": "theia start"
+    "start": "theia start",
+    "package": "electron-builder --win nsis portable --publish never",
+    "package:preview": "electron-builder --dir --publish never"
   },
   "theia": {
     "target": "electron"
@@ -40,5 +43,33 @@
     "ms-python.python": "https://open-vsx.org/api/ms-python/python/2026.4.0/file/ms-python.python-2026.4.0.vsix",
     "ms-python.debugpy": "https://open-vsx.org/api/ms-python/debugpy/2026.6.0/file/ms-python.debugpy-2026.6.0.vsix",
     "vscode-icons-team.vscode-icons": "https://open-vsx.org/api/vscode-icons-team/vscode-icons/12.19.0/file/vscode-icons-team.vscode-icons-12.19.0.vsix"
+  },
+  "productName": "Agent Workspace IDE",
+  "main": "lib/backend/electron-main.js",
+  "build": {
+    "appId": "com.thdrmsqhd.agentworkspaceide",
+    "productName": "Agent Workspace IDE",
+    "directories": {
+      "output": "dist"
+    },
+    "files": [
+      "lib/**/*",
+      "src-gen/**/*",
+      "node_modules/**/*",
+      "plugins/**/*",
+      "package.json"
+    ],
+    "win": {
+      "target": [
+        "nsis",
+        "portable"
+      ],
+      "artifactName": "Agent-Workspace-IDE-${version}-${arch}.${ext}"
+    },
+    "nsis": {
+      "oneClick": false,
+      "perMachine": false,
+      "allowToChangeInstallationDirectory": true
+    }
   }
 }

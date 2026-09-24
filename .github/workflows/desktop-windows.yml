@@ -26,3 +26,11 @@ jobs:
         run: npm --prefix apps/desktop run rebuild
       - name: Build production Electron application
         run: npm --prefix apps/desktop run build
+      - name: Package Windows installer and portable build
+        run: npm --prefix apps/desktop run package
+      - name: Upload Windows package
+        uses: actions/upload-artifact@v4
+        with:
+          name: agent-workspace-ide-windows
+          path: apps/desktop/dist/**
+          if-no-files-found: error

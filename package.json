@@ -47,7 +47,10 @@
     "reuse:evaluate": "node scripts/reuse-evaluate.mjs",
     "desktop:install": "npm --prefix apps/desktop install --ignore-scripts",
     "build:app-host": "tsc -p packages/app-host/tsconfig.json",
-    "build:workflow": "tsc -p packages/workflow/tsconfig.json"
+    "build:workflow": "tsc -p packages/workflow/tsconfig.json",
+    "package:win": "node scripts/package-windows-app.mjs",
+    "test:windows": "node scripts/test-windows.mjs",
+    "test:acceptance": "node scripts/acceptance-summary.mjs"
   },
   "devDependencies": {
     "@eslint/js": "9.39.1",
