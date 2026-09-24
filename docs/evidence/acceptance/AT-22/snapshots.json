@@ -1,0 +1,22 @@
+{
+  "captured": {
+    "17ec9a4a-cef0-4c3a-8cd9-92f024d2e1d6": {
+      "taskId": "17ec9a4a-cef0-4c3a-8cd9-92f024d2e1d6",
+      "projectId": "d03ac4c7-7ba2-4c91-b419-62bb2893a6a1",
+      "engine": "omp",
+      "model": "model-b",
+      "mode": "manual",
+      "capturedAt": "2026-09-24T12:58:26.376Z",
+      "sourceRevision": 1
+    },
+    "19c64c2f-c4f0-439f-b44f-d576fec00511": {
+      "taskId": "19c64c2f-c4f0-439f-b44f-d576fec00511",
+      "projectId": "d03ac4c7-7ba2-4c91-b419-62bb2893a6a1",
+      "engine": "omp",
+      "model": "model-a",
+      "mode": "automatic",
+      "capturedAt": "2026-09-24T12:58:26.302Z",
+      "sourceRevision": 0
+    }
+  }
+}

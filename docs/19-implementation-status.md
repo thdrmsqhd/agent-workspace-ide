@@ -43,7 +43,7 @@
 2. TV-001의 Java/Python 자동완성·선언 이동·진단·rename·debug 변수 전체 검증과 TV-002.
 3. OMP 18.2.5 raw abort 실패를 제품 process-tree fallback으로 감싼 TV-004 재검증, 기존 세션 이전 TV-007.
 4. 실제 3개/12개 동시 작업 메모리 baseline/candidate 측정과 장시간 PERF.
-5. AT-01~23 실제 증거 파일. `npm run test:acceptance`가 시나리오를 실행해 `docs/evidence/acceptance/AT-xx.json`을 쓴다. 현재 AT-03·AT-23은 PASS, AT-21은 모델 계층만 통과해 `BLOCKED`(편집기 UI 필요), 나머지는 미실행이다.
+5. AT-01~23 실제 증거 파일. `npm run test:acceptance`가 시나리오를 실행해 `docs/evidence/acceptance/AT-xx.json`을 쓴다. 현재 AT-01·AT-03·AT-20·AT-22·AT-23은 PASS, AT-21은 모델 계층만 통과해 `BLOCKED`(편집기 독립 스크롤 UI 미검증), 나머지 17건은 미실행이다.
 
 ## 완료 판정 규칙
 

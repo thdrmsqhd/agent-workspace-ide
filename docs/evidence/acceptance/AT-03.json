@@ -8,12 +8,12 @@
   "steps": [
     {
       "name": "없는 기준 ref로 준비 실패",
-      "detail": "워크트리 1개(메인만), phase=discussion, HEAD=4e2d29f 유지",
+      "detail": "워크트리 1개(메인만), phase=discussion, HEAD=33dd6dd 유지",
       "result": "ok"
     },
     {
       "name": "같은 단계 재시도 성공",
-      "detail": "C:/Users/gbsong/AppData/Local/Temp/awi-at03-v6vYul/worktrees/15fdab59-831f-4670-b512-cc8408f20767 @ 4e2d29f (refs/heads/awi/task/15fdab59-831f-4670-b512-cc8408f20767)",
+      "detail": "C:/Users/gbsong/AppData/Local/Temp/awi-at03-EidQf9/worktrees/03b1e418-d616-4339-a3c7-6985d9c06581 @ 33dd6dd (refs/heads/awi/task/03b1e418-d616-4339-a3c7-6985d9c06581)",
       "result": "ok"
     },
     {
@@ -23,16 +23,16 @@
     }
   ],
   "expected": "준비 결과가 메인 저장소 + 워크트리 하나, 기준 커밋 고정, 실패한 준비는 원본을 건드리지 않고 같은 단계로 재시도된다.",
-  "actual": "메인 + 워크트리 1개 | 기준 커밋 4e2d29f 고정 | 준비 실패 후 같은 단계 재시도 성공",
+  "actual": "메인 + 워크트리 1개 | 기준 커밋 33dd6dd 고정 | 준비 실패 후 같은 단계 재시도 성공",
   "artifacts": [
     "docs/evidence/acceptance/AT-03/worktrees.json",
     "docs/evidence/acceptance/AT-03/steps.txt"
   ],
   "env": {
-    "commit": "826cb8a",
+    "commit": "be1ee1f",
     "node": "v24.19.0",
     "platform": "win32",
     "arch": "x64",
-    "recordedAt": "2026-09-24T12:48:59.577Z"
+    "recordedAt": "2026-09-24T12:58:23.367Z"
   }
 }

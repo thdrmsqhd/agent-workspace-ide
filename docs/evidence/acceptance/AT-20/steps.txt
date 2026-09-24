@@ -1,0 +1,11 @@
+ok	워크트리 준비	C:\Users\gbsong\AppData\Local\Temp\awi-at20-z9nDIf\worktrees\bd72ea0f-6ffa-4978-a19b-0decbd8b3a80
+ok	정리 차단 사유	깨끗한 상태는 차단 0, 변경·프로세스·버퍼·디버거·반영 실패는 각각 차단 사유로 계산
+ok	미반영 변경 보류	untracked 파일이 있으면 정리를 거부하고 워크트리 유지
+note	실행 중 정리 차단	엔진이 워크트리를 cwd로 잡고 있는 동안에는 정리 대상이 아니다.
+ok	소유 저장소 확인	다른 저장소 경로로는 정리 거부
+ok	실행 중 완료 금지	실행 중 작업은 완료 처리할 수 없다
+ok	취소 기록 보존	disposition=cancelled, runState=paused, 원래 요청 유지
+ok	작업 종료	엔진·프로세스 종료 후 정리 단계로 진행
+ok	안전한 정리	워크트리 제거, 브랜치 awi/task/bd72ea0f… 보존, 원본 HEAD 유지
+ok	보관 기록 보존	보관은 archived 표시이며 행·원래 요청이 삭제되지 않는다
+ok	병합 후 연결 작업	병합 완료면 직전 작업을 가리키는 linked-task 계획, 미병합이면 same-task

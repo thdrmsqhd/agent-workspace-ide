@@ -1,0 +1,9 @@
+ok	작업 1 스냅샷	model=model-a, mode=automatic, sourceRevision=0
+ok	오래된 revision 거부	기대 revision이 다르면 E_REVISION_CONFLICT
+ok	프로젝트 기본값 변경	model-a → model-b, revision=1
+ok	작업 1 스냅샷 불변	model=model-a, mode=automatic 유지
+ok	작업 2 스냅샷	model=model-b, mode=manual (변경된 기본값 반영)
+ok	실행 시작 스냅샷	task1 = model-a/automatic
+ok	실행 중 기본값 변경	model-c로 바꿔도 실행 중 task1은 model-a 유지
+ok	종료	스냅샷 복원을 보기 위해 실행을 멈추고 프로세스 종료
+ok	재시작 복원	빈 SettingsRegistry로 시작했는데도 task1 = model-a/automatic 복원(기본값은 model-c)

@@ -1,0 +1,68 @@
+{
+  "id": "AT-22",
+  "status": "PASS",
+  "detail": "프로젝트 기본값을 model-a→model-b→model-c로 바꾸는 동안 이미 캡처된 작업 스냅샷이 변하지 않았고, 새 작업만 변경을 받았으며, 재시작 후 DB 스냅샷이 복원됐다. 오래된 revision은 E_REVISION_CONFLICT로 거부됐다. 엔진은 저장소 시험용 fake-omp-engine 픽스처다. 이 AT는 설정 스냅샷의 적용 범위와 불변성이라는 제품 계층 사실을 본다.",
+  "title": "프로젝트 기본값 변경과 작업 설정 스냅샷 불변·재시작 복원",
+  "scenario": "scripts/acceptance/scenarios/at-22-settings-snapshot.mjs",
+  "precondition": "프로젝트 기본 설정을 만들고 작업 스냅샷을 캡처한 뒤 기본값을 바꾸고, 프로세스를 재시작해 복원을 확인한다.",
+  "steps": [
+    {
+      "name": "작업 1 스냅샷",
+      "detail": "model=model-a, mode=automatic, sourceRevision=0",
+      "result": "ok"
+    },
+    {
+      "name": "오래된 revision 거부",
+      "detail": "기대 revision이 다르면 E_REVISION_CONFLICT",
+      "result": "ok"
+    },
+    {
+      "name": "프로젝트 기본값 변경",
+      "detail": "model-a → model-b, revision=1",
+      "result": "ok"
+    },
+    {
+      "name": "작업 1 스냅샷 불변",
+      "detail": "model=model-a, mode=automatic 유지",
+      "result": "ok"
+    },
+    {
+      "name": "작업 2 스냅샷",
+      "detail": "model=model-b, mode=manual (변경된 기본값 반영)",
+      "result": "ok"
+    },
+    {
+      "name": "실행 시작 스냅샷",
+      "detail": "task1 = model-a/automatic",
+      "result": "ok"
+    },
+    {
+      "name": "실행 중 기본값 변경",
+      "detail": "model-c로 바꿔도 실행 중 task1은 model-a 유지",
+      "result": "ok"
+    },
+    {
+      "name": "종료",
+      "detail": "스냅샷 복원을 보기 위해 실행을 멈추고 프로세스 종료",
+      "result": "ok"
+    },
+    {
+      "name": "재시작 복원",
+      "detail": "빈 SettingsRegistry로 시작했는데도 task1 = model-a/automatic 복원(기본값은 model-c)",
+      "result": "ok"
+    }
+  ],
+  "expected": "기본값 변경은 새 작업에만 적용되고 이미 캡처된 작업(실행 중 포함) 스냅샷은 변하지 않으며, 재시작 후에도 스냅샷이 복원된다.",
+  "actual": "기본값 model-a→model-b→model-c 변경에도 기존 작업 스냅샷 불변 | 새 작업만 변경 반영 | 재시작 후 DB 스냅샷 복원 확인",
+  "artifacts": [
+    "docs/evidence/acceptance/AT-22/snapshots.json",
+    "docs/evidence/acceptance/AT-22/steps.txt"
+  ],
+  "env": {
+    "commit": "be1ee1f",
+    "node": "v24.19.0",
+    "platform": "win32",
+    "arch": "x64",
+    "recordedAt": "2026-09-24T12:58:28.238Z"
+  }
+}
