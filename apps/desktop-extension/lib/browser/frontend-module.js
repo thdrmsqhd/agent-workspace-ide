@@ -1,0 +1,147 @@
+"use strict";
+Object.defineProperty(exports,"__esModule",{value:true});
+const { ContainerModule }=require("@theia/core/shared/inversify");
+const {
+  BaseWidget,FrontendApplicationContribution,WidgetFactory,WidgetManager,
+  WebSocketConnectionProvider,OpenerService,open
+}=require("@theia/core/lib/browser");
+const URI=require("@theia/core/lib/common/uri").default;
+const { AWI_SERVICE_PATH }=require("../common/protocol");
+const WIDGET_ID="awi.dashboard";
+
+function el(name,text,className){
+  const node=document.createElement(name);
+  if(text!==undefined)node.textContent=text;
+  if(className)node.className=className;
+  return node;
+}
+function button(label,action){
+  const b=el("button",label,"awi-btn");b.type="button";b.onclick=()=>void action();return b;
+}
+function input(placeholder){
+  const i=el("input");i.placeholder=placeholder;return i;
+}
+
+class AwiDashboardWidget extends BaseWidget{
+  constructor(service,opener){
+    super();
+    this.service=service;this.opener=opener;this.data={projects:[],tasks:[],agents:[]};this.activeTask=undefined;
+    this.id=WIDGET_ID;this.title.label="Agent Workspace";this.title.caption="Agent Workspace";this.title.closable=false;
+    this.node.classList.add("awi-dashboard-root");
+    void this.refresh();
+  }
+  async refresh(){
+    this.data=await this.service.snapshot();
+    if(this.activeTask && !this.data.tasks.some(t=>t.id===this.activeTask))this.activeTask=undefined;
+    this.update();
+  }
+  async selectTask(taskId){this.activeTask=taskId;await this.service.syncTask(taskId).catch(()=>undefined);this.update();}
+  async action(fn){try{await fn();await this.refresh();}catch(error){window.alert(error instanceof Error?error.message:String(error));}}
+  onUpdateRequest(){
+    const root=this.node;root.replaceChildren();
+    const style=el("style");
+    style.textContent=`
+      .awi-dashboard-root{height:100%;overflow:hidden;font-family:var(--theia-ui-font-family)}
+      .awi-topbar{display:flex;gap:6px;padding:8px;border-bottom:1px solid var(--theia-border-color);flex-wrap:wrap}
+      .awi-topbar input,.awi-topbar select,.awi-compose{min-width:120px;background:var(--theia-input-background);color:var(--theia-input-foreground);border:1px solid var(--theia-input-border);padding:5px}
+      .awi-body{display:grid;grid-template-columns:240px minmax(320px,1fr) 280px;height:calc(100% - 96px)}
+      .awi-pane{overflow:auto;padding:8px;border-right:1px solid var(--theia-border-color)}
+      .awi-pane:last-child{border-right:0;border-left:1px solid var(--theia-border-color)}
+      .awi-card{padding:8px;margin:6px 0;border:1px solid var(--theia-border-color);border-radius:4px}
+      .awi-btn{margin:2px;padding:4px 8px}.awi-file{display:block;width:100%;text-align:left;background:transparent;color:inherit;border:0;padding:3px}
+      .awi-message{padding:6px;margin:4px 0;border-left:3px solid var(--theia-border-color);white-space:pre-wrap}
+      .awi-compose{width:calc(100% - 16px);min-height:72px}
+    `;
+    root.append(style);
+    const top=el("div",undefined,"awi-topbar");
+    const name=input("프로젝트 이름");const path=input("Git 프로젝트 경로");const model=input("OMP 모델(provider/model)");
+    const branch=input("기준 브랜치");branch.value="main";
+    top.append(name,path,model,branch,button("프로젝트 등록",()=>this.action(async()=>{
+      if(!name.value.trim()||!path.value.trim()||!model.value.trim())throw new Error("프로젝트 이름·경로·모델이 필요합니다.");
+      await this.service.registerProject(name.value,path.value,branch.value||"main",model.value,"manual");
+    })));
+    const projectSelect=el("select");
+    projectSelect.append(el("option","새 요청 프로젝트"));
+    for(const p of this.data.projects){const o=el("option",p.name);o.value=p.id;projectSelect.append(o);}
+    const prompt=input("새 요청");
+    top.append(projectSelect,prompt,button("새 요청",()=>this.action(async()=>{
+      if(!projectSelect.value||!prompt.value.trim())throw new Error("프로젝트와 요청을 입력하세요.");
+      const taskId=await this.service.createRequest(projectSelect.value,prompt.value);this.activeTask=taskId;
+    })));
+    root.append(top);
+
+    const body=el("div",undefined,"awi-body");
+    const left=el("section",undefined,"awi-pane");left.append(el("h3","파일"));
+    const center=el("main",undefined,"awi-pane");center.append(el("h3",this.activeTask?"작업":"전체 현황"));
+    const right=el("aside",undefined,"awi-pane");right.append(el("h3","프로젝트 · 세션"));
+
+    if(this.activeTask){
+      void this.service.files(this.activeTask).then(files=>{
+        if(this.activeTask===undefined)return;
+        left.replaceChildren(el("h3","파일"));
+        for(const f of files){
+          const b=button((f.isDirectory?"▸ ":"")+f.path,async()=>{
+            if(!f.isDirectory)await open(this.opener,new URI(f.uri));
+          });b.className="awi-file";left.append(b);
+        }
+      }).catch(()=>undefined);
+      const task=this.data.tasks.find(t=>t.id===this.activeTask);
+      if(task){
+        center.append(el("div",task.originalPrompt,"awi-card"));
+        const controls=el("div");
+        if(task.status==="idle"||task.status==="discussion")controls.append(button("작업 시작",()=>this.action(()=>this.service.beginTask(task.id))));
+        if(task.status==="running")controls.append(button("중단",()=>this.action(()=>this.service.abortTask(task.id))));
+        if(task.status==="paused")controls.append(button("재개",()=>this.action(()=>this.service.resumeTask(task.id))));
+        controls.append(button("취소",()=>this.action(()=>this.service.cancelTask(task.id))));
+        if(task.archived===false && task.status!=="running")controls.append(button("보관",()=>this.action(()=>this.service.archiveTask(task.id))));
+        center.append(controls);
+        void this.service.conversation(task.id).then(messages=>{
+          for(const old of center.querySelectorAll(".awi-message"))old.remove();
+          for(const m of messages)center.append(el("div",`${m.role}: ${m.content}`,"awi-message"));
+        }).catch(()=>undefined);
+        for(const request of task.inputRequests||[]){
+          const box=el("div",undefined,"awi-card");box.append(el("div",request.message));
+          const answer=input("답변");box.append(answer,button("응답",()=>this.action(()=>this.service.respondInput(task.id,request.id,answer.value))));center.append(box);
+        }
+        const compose=el("textarea");compose.className="awi-compose";compose.placeholder="추가 지시";
+        center.append(compose,button("즉시 전달",()=>this.action(()=>this.service.sendTask(task.id,compose.value,"immediate"))),
+          button("대기열",()=>this.action(()=>this.service.sendTask(task.id,compose.value,"queued"))));
+      }
+    }else{
+      for(const project of this.data.projects){
+        center.append(el("h4",project.name));
+        for(const task of this.data.tasks.filter(t=>t.projectId===project.id)){
+          const card=el("div",undefined,"awi-card");
+          card.append(el("div",task.originalPrompt),el("div",`${task.status} · 변경 ${task.changedFileCount} · 응답 ${task.pendingInputCount}`),
+            button("열기",()=>this.selectTask(task.id)));
+          center.append(card);
+        }
+      }
+    }
+
+    for(const project of this.data.projects){
+      right.append(el("h4",project.name));
+      for(const task of this.data.tasks.filter(t=>t.projectId===project.id)){
+        const agents=this.data.agents.filter(a=>a.taskId===task.id);
+        right.append(button(`${task.pendingInputCount?"● ":""}${task.originalPrompt.slice(0,28)} (${agents.length})`,()=>this.selectTask(task.id)));
+        for(const agent of agents)right.append(el("div",`↳ ${agent.currentAction||agent.status}`));
+      }
+    }
+    body.append(left,center,right);root.append(body);
+  }
+}
+
+exports.default=new ContainerModule(bind=>{
+  bind("AwiBackendProxy").toDynamicValue(ctx=>ctx.container.get(WebSocketConnectionProvider).createProxy(AWI_SERVICE_PATH)).inSingletonScope();
+  bind(WidgetFactory).toDynamicValue(ctx=>({
+    id:WIDGET_ID,
+    createWidget:()=>new AwiDashboardWidget(ctx.container.get("AwiBackendProxy"),ctx.container.get(OpenerService))
+  })).inSingletonScope();
+  bind(FrontendApplicationContribution).toDynamicValue(ctx=>({
+    initializeLayout:async app=>{
+      const widget=await ctx.container.get(WidgetManager).getOrCreateWidget(WIDGET_ID);
+      if(!widget.isAttached)app.shell.addWidget(widget,{area:"main"});
+      app.shell.activateWidget(WIDGET_ID);
+    }
+  })).inSingletonScope();
+});

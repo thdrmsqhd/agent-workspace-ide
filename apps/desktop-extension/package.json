@@ -1,0 +1,10 @@
+{
+  "name":"@awi/theia-product-extension",
+  "version":"0.1.0",
+  "private":true,
+  "theiaExtensions":[
+    {"frontend":"lib/browser/frontend-module.js"},
+    {"backend":"lib/node/backend-module.js"}
+  ],
+  "peerDependencies":{"@theia/core":"1.75.0"}
+}

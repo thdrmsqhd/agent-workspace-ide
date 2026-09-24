@@ -18,7 +18,19 @@
     "@theia/process": "1.75.0",
     "@theia/terminal": "1.75.0",
     "@theia/vsx-registry": "1.75.0",
-    "@theia/workspace": "1.75.0"
+    "@theia/workspace": "1.75.0",
+    "@awi/theia-product-extension": "file:../desktop-extension",
+    "@awi/app-host": "file:../../packages/app-host",
+    "@awi/attachments": "file:../../packages/attachments",
+    "@awi/contracts": "file:../../packages/contracts",
+    "@awi/core": "file:../../packages/core",
+    "@awi/engine-omp": "file:../../packages/engine-omp",
+    "@awi/persistence": "file:../../packages/persistence",
+    "@awi/processes": "file:../../packages/processes",
+    "@awi/runtime": "file:../../packages/runtime",
+    "@awi/settings": "file:../../packages/settings",
+    "@awi/ui": "file:../../packages/ui",
+    "@awi/worktrees": "file:../../packages/worktrees"
   },
   "devDependencies": {
     "@theia/cli": "1.75.0",
