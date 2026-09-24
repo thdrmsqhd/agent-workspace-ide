@@ -4,6 +4,7 @@ import { writeFile } from "node:fs/promises";
 export async function connectCdp(webSocketDebuggerUrl, { timeoutMs = 20_000 } = {}) {
   const socket = new WebSocket(webSocketDebuggerUrl);
   const pending = new Map();
+  const listeners = new Map();
   let nextId = 1;
 
   await new Promise((resolve, reject) => {
@@ -20,11 +21,16 @@ export async function connectCdp(webSocketDebuggerUrl, { timeoutMs = 20_000 } = 
 
   socket.addEventListener("message", (event) => {
     const message = JSON.parse(String(event.data));
-    if (!message.id || !pending.has(message.id)) return;
-    const settle = pending.get(message.id);
-    pending.delete(message.id);
-    if (message.error) settle.reject(new Error(`${message.error.message} (${message.error.code})`));
-    else settle.resolve(message.result);
+    if (message.id && pending.has(message.id)) {
+      const settle = pending.get(message.id);
+      pending.delete(message.id);
+      if (message.error) settle.reject(new Error(`${message.error.message} (${message.error.code})`));
+      else settle.resolve(message.result);
+      return;
+    }
+    if (message.method) {
+      for (const handler of listeners.get(message.method) ?? []) handler(message.params, message.sessionId);
+    }
   });
 
   socket.addEventListener("close", () => {
@@ -93,7 +99,19 @@ export async function connectCdp(webSocketDebuggerUrl, { timeoutMs = 20_000 } = 
     return path;
   };
 
-  return { send, evaluate, waitFor, screenshot, close: () => socket.close() };
+  return {
+    send,
+    evaluate,
+    waitFor,
+    screenshot,
+    on: (method, handler) => {
+      const handlers = listeners.get(method) ?? [];
+      handlers.push(handler);
+      listeners.set(method, handlers);
+      return () => listeners.set(method, (listeners.get(method) ?? []).filter((item) => item !== handler));
+    },
+    close: () => socket.close(),
+  };
 }
 
 /**

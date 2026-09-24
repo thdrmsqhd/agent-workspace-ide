@@ -1,6 +1,6 @@
 {
-  "repoA": "C:\\Users\\gbsong\\AppData\\Local\\Temp\\awi-at01-bxWSWC\\repos\\alpha-project",
-  "repoB": "C:\\Users\\gbsong\\AppData\\Local\\Temp\\awi-at01-bxWSWC\\repos\\beta-project",
+  "repoA": "C:\\Users\\gbsong\\AppData\\Local\\Temp\\awi-at01-ZpYH2S\\repos\\alpha-project",
+  "repoB": "C:\\Users\\gbsong\\AppData\\Local\\Temp\\awi-at01-ZpYH2S\\repos\\beta-project",
   "model": "openai-codex/gpt-5",
   "panel": "프로젝트 · 세션 | alpha-project | beta-project"
 }

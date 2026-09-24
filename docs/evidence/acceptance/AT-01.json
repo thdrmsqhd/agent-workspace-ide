@@ -8,53 +8,93 @@
   "steps": [
     {
       "name": "사전 조건",
-      "detail": "격리 홈 C:\\Users\\gbsong\\AppData\\Local\\Temp\\awi-at01-bxWSWC\\home, 저장소 2개 생성",
-      "result": "ok"
+      "detail": "격리 홈 C:\\Users\\gbsong\\AppData\\Local\\Temp\\awi-at01-ZpYH2S\\home, 저장소 2개 생성",
+      "result": "ok",
+      "at": 336
     },
     {
       "name": "first-launch: 워크스페이스 없이 대시보드가 뜨지 않아 저장소를 열어 다시 기동",
-      "detail": "C:\\Users\\gbsong\\AppData\\Local\\Temp\\awi-at01-bxWSWC\\repos\\alpha-project",
-      "result": "note"
+      "detail": "C:\\Users\\gbsong\\AppData\\Local\\Temp\\awi-at01-ZpYH2S\\repos\\alpha-project",
+      "result": "note",
+      "at": 5727
     },
     {
       "name": "first-launch: 워크스페이스 신뢰 모달 닫기",
       "detail": "클릭",
-      "result": "note"
+      "result": "note",
+      "at": 14080
+    },
+    {
+      "name": "녹화 시작",
+      "detail": "C:\\Users\\gbsong\\AppData\\Local\\Temp\\awi-at-01-frames (CDP 캡처 130ms 간격)",
+      "result": "note",
+      "at": 15881
     },
     {
       "name": "앱 실행",
       "detail": "제목=\"Agent Workspace - alpha-project - Eclipse Theia\", 대시보드 3영역 확인",
-      "result": "ok"
+      "result": "ok",
+      "at": 16889
     },
     {
       "name": "프로젝트 등록: alpha-project",
-      "detail": "C:\\Users\\gbsong\\AppData\\Local\\Temp\\awi-at01-bxWSWC\\repos\\alpha-project",
-      "result": "ok"
+      "detail": "C:\\Users\\gbsong\\AppData\\Local\\Temp\\awi-at01-ZpYH2S\\repos\\alpha-project",
+      "result": "ok",
+      "at": 21755
     },
     {
       "name": "프로젝트 등록: beta-project",
-      "detail": "C:\\Users\\gbsong\\AppData\\Local\\Temp\\awi-at01-bxWSWC\\repos\\beta-project",
-      "result": "ok"
+      "detail": "C:\\Users\\gbsong\\AppData\\Local\\Temp\\awi-at01-ZpYH2S\\repos\\beta-project",
+      "result": "ok",
+      "at": 27116
     },
     {
       "name": "우측 프로젝트·세션 영역",
       "detail": "프로젝트 · 세션 | alpha-project | beta-project",
-      "result": "ok"
+      "result": "ok",
+      "at": 27119
+    },
+    {
+      "name": "녹화 구간 종료",
+      "detail": "88프레임 / 12.6초",
+      "result": "note",
+      "at": 28411
     },
     {
       "name": "앱 종료",
       "detail": "재시작 검증을 위해 종료",
-      "result": "ok"
+      "result": "ok",
+      "at": 31424
     },
     {
       "name": "second-launch: 워크스페이스 없이 대시보드가 뜨지 않아 저장소를 열어 다시 기동",
-      "detail": "C:\\Users\\gbsong\\AppData\\Local\\Temp\\awi-at01-bxWSWC\\repos\\alpha-project",
-      "result": "note"
+      "detail": "C:\\Users\\gbsong\\AppData\\Local\\Temp\\awi-at01-ZpYH2S\\repos\\alpha-project",
+      "result": "note",
+      "at": 36731
+    },
+    {
+      "name": "녹화 시작",
+      "detail": "C:\\Users\\gbsong\\AppData\\Local\\Temp\\awi-at-01-frames (CDP 캡처 130ms 간격)",
+      "result": "note",
+      "at": 45355
     },
     {
       "name": "재시작 복원",
       "detail": "프로젝트 · 세션 | alpha-project | beta-project",
-      "result": "ok"
+      "result": "ok",
+      "at": 46364
+    },
+    {
+      "name": "녹화 구간 종료",
+      "detail": "19프레임 / 3.1초",
+      "result": "note",
+      "at": 48367
+    },
+    {
+      "name": "시연 영상",
+      "detail": "107프레임 → docs/evidence/acceptance/AT-01/recording.mp4 (캡션 5개)",
+      "result": "ok",
+      "at": 49003
     }
   ],
   "expected": "독립 앱이 실행되고, 우측 프로젝트·세션 영역과 전체 현황이 두 프로젝트를 반영하며, 재시작 후에도 두 프로젝트가 복원된다.",
@@ -62,6 +102,7 @@
   "artifacts": [
     "docs/evidence/acceptance/AT-01/projects-registered.json",
     "docs/evidence/acceptance/AT-01/restart.json",
+    "docs/evidence/acceptance/AT-01/recording.mp4",
     "docs/evidence/acceptance/AT-01/steps.txt",
     "first-launch: docs\\evidence\\acceptance\\AT-01\\first-launch.png",
     "after-register: docs\\evidence\\acceptance\\AT-01\\after-register.png",
@@ -69,10 +110,10 @@
     "after-restart: docs\\evidence\\acceptance\\AT-01\\after-restart.png"
   ],
   "env": {
-    "commit": "fa10fad",
+    "commit": "012bbde",
     "node": "v24.19.0",
     "platform": "win32",
     "arch": "x64",
-    "recordedAt": "2026-09-24T13:04:24.953Z"
+    "recordedAt": "2026-09-24T13:27:26.690Z"
   }
 }

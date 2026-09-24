@@ -67,16 +67,26 @@ export async function writeEvidence({
   return record;
 }
 
-/** 단계 기록을 모아 두었다가 한 번에 남긴다. */
+/** 단계 기록을 모아 두었다가 한 번에 남긴다. 녹화 캡션을 위해 경과 시각도 함께 기록한다. */
 export function createStepLog() {
   const steps = [];
+  const startedAt = Date.now();
+  const push = (result, name, detail) => {
+    const at = Date.now() - startedAt;
+    steps.push({ name, detail, result, at });
+    return at;
+  };
   return {
     steps,
     ok(name, detail = "") {
-      steps.push({ name, detail, result: "ok" });
+      push("ok", name, detail);
     },
     note(name, detail = "") {
-      steps.push({ name, detail, result: "note" });
+      push("note", name, detail);
+    },
+    /** 시연 영상 캡션용: 이 시점의 경과 ms를 돌려준다. */
+    mark(name) {
+      return push("mark", name, "");
     },
   };
 }

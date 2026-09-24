@@ -7,12 +7,20 @@ import process from "node:process";
 import { promisify } from "node:util";
 import { artifactPath, createStepLog, saveArtifact, writeEvidence } from "../lib/harness.mjs";
 import { launchPackagedApp, statePath } from "../lib/packaged-app.mjs";
+import { assembleMp4, startRecording } from "../lib/recording.mjs";
 
 const run = promisify(execFile);
 const ID = "AT-01";
 const TITLE = "Windows 앱 실행, 두 프로젝트 등록, 재시작 후 복원";
 const PRECONDITION = "CI가 만든 Windows 패키지(win-unpacked)를 창을 화면 밖·포커스 불가로 띄우고, 격리된 임시 홈에서 두 개의 Git 저장소를 프로젝트로 등록한다.";
 const EXPECTED = "독립 앱이 실행되고, 우측 프로젝트·세션 영역과 전체 현황이 두 프로젝트를 반영하며, 재시작 후에도 두 프로젝트가 복원된다.";
+const RECORDING = process.env.AWI_ACCEPTANCE_RECORD === "1";
+const FRAME_DIR = join(process.env.LOCALAPPDATA ?? tmpdir(), "Temp", "awi-at-01-frames");
+
+/** 녹화 모드에서만 동작을 눈에 띄게 늦춘다(사람이 보는 시연 영상용). */
+const pace = async (ms) => {
+  if (RECORDING) await new Promise((resolve) => setTimeout(resolve, ms));
+};
 
 async function git(cwd, ...args) {
   return (await run("git", args, { cwd })).stdout;
@@ -39,6 +47,16 @@ const setInput = (cdp, placeholder, value) => cdp.evaluate(`(() => {
   element.dispatchEvent(new Event("change", { bubbles: true }));
   return element.value;
 })()`);
+
+const typeInput = async (cdp, placeholder, value) => {
+  if (!RECORDING) return setInput(cdp, placeholder, value);
+  const step = Math.max(1, Math.ceil(value.length / 14));
+  for (let end = step; end < value.length; end += step) {
+    await setInput(cdp, placeholder, value.slice(0, end));
+    await new Promise((resolve) => setTimeout(resolve, 45));
+  }
+  return setInput(cdp, placeholder, value);
+};
 
 const clickByText = (cdp, text) => cdp.evaluate(`(() => {
   const candidates = [...document.querySelectorAll("button,a,[role=button]")];
@@ -70,6 +88,30 @@ export default {
     let app;
     const artifacts = [];
     const shots = {};
+    const recordedFrames = [];
+    let recorder = null;
+    let recordingOffset = 0;
+    if (RECORDING) await rm(FRAME_DIR, { recursive: true, force: true });
+    const captions = [];
+    const captureMark = (text) => {
+      if (!RECORDING) return;
+      const index = recordedFrames.length + (recorder?.frames.length ?? 0) - 1;
+      captions.push({ frameIndex: Math.max(0, index), text });
+    };
+    const startRec = async (cdp) => {
+      if (!RECORDING) return;
+      recorder = await startRecording(cdp, { dir: FRAME_DIR, offsetMs: recordingOffset, startIndex: recordedFrames.length, intervalMs: 130 });
+      log.note("녹화 시작", `${FRAME_DIR} (CDP 캡처 130ms 간격)`);
+    };
+    const stopRec = async () => {
+      if (!recorder) return;
+      const info = await recorder.stop();
+      recordedFrames.push(...recorder.frames);
+      recordingOffset += info.durationMs;
+      recorder = null;
+      log.note("녹화 구간 종료", `${info.frameCount}프레임 / ${(info.durationMs / 1000).toFixed(1)}초`);
+    };
+
     const rightPanel = async (cdp) => cdp.evaluate(`(() => {
       const headings = [...document.querySelectorAll("div,span,h3")].filter((element) => (element.innerText || "").trim() === "프로젝트 · 세션");
       const region = headings.map((element) => element.parentElement).find(Boolean);
@@ -77,13 +119,19 @@ export default {
     })()`);
 
     const register = async (cdp, name, path) => {
-      assert.equal(await setInput(cdp, "프로젝트 이름", name), name);
-      assert.equal(await setInput(cdp, "Git 프로젝트 경로", path), path);
-      await setInput(cdp, "OMP 모델(provider/model)", model);
+      await pace(500);
+      assert.equal(await typeInput(cdp, "프로젝트 이름", name), name);
+      await pace(400);
+      assert.equal(await typeInput(cdp, "Git 프로젝트 경로", path), path);
+      await pace(400);
+      await typeInput(cdp, "OMP 모델(provider/model)", model);
+      await pace(300);
       await setInput(cdp, "기준 브랜치", "main");
+      await pace(600);
       const clicked = await clickByText(cdp, "프로젝트 등록");
       assert.equal(clicked, "클릭", "프로젝트 등록 버튼을 찾지 못했습니다.");
       await cdp.waitFor(`document.body.innerText.includes(${JSON.stringify(name)})`, { timeoutMs: 60_000 });
+      await pace(900);
       log.ok(`프로젝트 등록: ${name}`, path);
     };
 
@@ -102,6 +150,8 @@ export default {
         await new Promise((resolve) => setTimeout(resolve, 1500));
       }
       shots[label] = await launched.cdp.screenshot(await artifactPath(ID, `${label}.png`));
+      await startRec(launched.cdp);
+      await pace(1000);
       return launched;
     };
 
@@ -117,16 +167,22 @@ export default {
       assert.equal(shell.register, true, "프로젝트 등록 폼이 없습니다.");
       assert.deepEqual(shell.regions, ["파일", "전체 현황", "프로젝트 · 세션"], "대시보드 3영역이 모두 있어야 합니다.");
       log.ok("앱 실행", `제목="${shell.title.slice(0, 60)}", 대시보드 3영역 확인`);
+      captureMark("① Windows 앱 실행 · 대시보드 표시");
 
+      captureMark("② 프로젝트 등록 (alpha-project)");
       await register(cdp, "alpha-project", repoA);
+      captureMark("③ 프로젝트 등록 (beta-project)");
       await register(cdp, "beta-project", repoB);
       const panel = await rightPanel(cdp);
       assert.match(panel, /alpha-project/, "우측 영역에 첫 프로젝트가 보여야 합니다.");
       assert.match(panel, /beta-project/, "우측 영역에 둘째 프로젝트가 보여야 합니다.");
       log.ok("우측 프로젝트·세션 영역", panel.slice(0, 200));
+      captureMark("④ 전체 현황·프로젝트 목록에 2개 반영");
       artifacts.push(await saveArtifact(ID, "projects-registered.json", { repoA, repoB, model, panel }));
       shots["after-register"] = await cdp.screenshot(await artifactPath(ID, "after-register.png"));
 
+      await pace(800);
+      await stopRec();
       await app.close();
       log.ok("앱 종료", "재시작 검증을 위해 종료");
 
@@ -137,8 +193,20 @@ export default {
       assert.match(restored, /beta-project/, "재시작 후 둘째 프로젝트가 복원되어야 합니다.");
       const restoredPanel = await rightPanel(app.cdp);
       log.ok("재시작 복원", restoredPanel.slice(0, 200));
+      captureMark("⑤ 앱 재시작 후 프로젝트 그대로 복원");
       shots["after-restart"] = await app.cdp.screenshot(await artifactPath(ID, "after-restart.png"));
+      await pace(1500);
+      await stopRec();
       artifacts.push(await saveArtifact(ID, "restart.json", { restoredPanel, stateFile: statePath(home) }));
+
+      if (RECORDING && recordedFrames.length > 0) {
+        const captionList = captions
+          .map((item) => ({ atMs: recordedFrames[item.frameIndex]?.at ?? 0, text: item.text }))
+          .filter((item) => item.atMs > 0);
+        const video = await assembleMp4({ frames: recordedFrames, outPath: await artifactPath(ID, "recording.mp4"), captions: captionList });
+        artifacts.push(video.split("\\").join("/"));
+        log.ok("시연 영상", `${recordedFrames.length}프레임 → ${video.split("\\").join("/")} (캡션 ${captionList.length}개)`);
+      }
     } finally {
       if (app) await app.close();
       await rm(workspace, { recursive: true, force: true, maxRetries: 5, retryDelay: 100 });
