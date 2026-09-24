@@ -1,6 +1,6 @@
 import { mkdir, readFile, writeFile } from "node:fs/promises";
 import { basename, join } from "node:path";
-import { fileURLToPath } from "node:url";
+import { fileURLToPath, URL } from "node:url";
 
 const root=fileURLToPath(new URL("../apps/desktop/",import.meta.url));
 const manifest=JSON.parse(await readFile(join(root,"package.json"),"utf8"));
