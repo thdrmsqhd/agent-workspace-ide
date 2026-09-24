@@ -44,10 +44,32 @@ export interface ViewState {
   readonly drafts: Readonly<Record<string, string>>;
   readonly newRequestDrafts: Readonly<Record<string, string>>;
 }
+export interface InputRequestItem {
+  readonly id: string;
+  readonly taskId: string;
+  readonly prompt: string;
+  readonly expiresAt?: string;
+}
+export interface AttachmentViewItem {
+  readonly id: string;
+  readonly taskId: string;
+  readonly label: string;
+  readonly kind: "file" | "folder" | "image" | "code-selection";
+}
+export interface ReviewViewItem {
+  readonly taskId: string;
+  readonly summary: string;
+  readonly changedFiles: readonly string[];
+  readonly checks: readonly { name: string; status: "passed" | "failed" | "not_run" }[];
+  readonly urls: readonly string[];
+}
 export interface WorkspaceData {
   readonly projects: readonly ProjectItem[];
   readonly tasks: readonly TaskItem[];
   readonly agents: readonly AgentItem[];
+  readonly inputRequests?: readonly InputRequestItem[];
+  readonly attachments?: readonly AttachmentViewItem[];
+  readonly reviews?: readonly ReviewViewItem[];
 }
 export type ViewAction =
   | { kind: "selectNewProject"; projectId: string }

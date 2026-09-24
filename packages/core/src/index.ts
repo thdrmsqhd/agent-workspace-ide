@@ -133,3 +133,21 @@ export function releaseSlot(activeTaskIds: ReadonlySet<string>, taskId: string):
   remaining.delete(taskId);
   return remaining;
 }
+
+export function cancelTask(task: TaskQueue): TaskQueue {
+  if (task.integrationState === "merging" || task.integrationState === "pushing" || task.integrationState === "pr_pending") {
+    throw new DomainError("E_STATE", "외부 반영 결과를 확인하기 전에는 작업을 취소할 수 없습니다.");
+  }
+  if (task.phase === "archived") return task;
+  return { ...task, runState: task.runState === "idle" ? "paused" : task.runState, queueMode: "paused", revision: task.revision + 1 };
+}
+
+export function archiveTask(task: TaskQueue): TaskQueue {
+  if (["running","waiting_input","reconnecting","stopping"].includes(task.runState)) {
+    throw new DomainError("E_STATE", "실행 중인 작업은 보관할 수 없습니다.");
+  }
+  if (!["none","done","failed"].includes(task.integrationState)) {
+    throw new DomainError("E_STATE", "반영 상태를 먼저 확인해야 합니다.");
+  }
+  return { ...task, phase: "archived", queueMode: "paused", revision: task.revision + 1 };
+}

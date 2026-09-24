@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { acquireSlot, releaseSlot, enqueue, updateQueued, deleteQueued, claimNext, abort, confirmStopped, markUnknown, resume } from "@awi/core";
+import { acquireSlot, releaseSlot, enqueue, updateQueued, deleteQueued, claimNext, abort, archiveTask, cancelTask, confirmStopped, markUnknown, resume } from "@awi/core";
 
 const task = () => ({ taskId: "A", phase: "execution", runState: "running", integrationState: "none", queueMode: "enabled", revision: 0, messages: [] });
 const add = (state, id) => enqueue(state, state.revision, { id, text: id, attachmentIds: [] });
@@ -51,4 +51,14 @@ test("반영 중 수정과 13번째 실행을 거절하며 다른 작업 슬롯�
   active = releaseSlot(active, "T0");
   active = acquireSlot(active, "T12");
   assert.equal(active.size, 12);
+});
+
+test("취소는 기록을 유지하고 실행 중 작업은 정지 상태로 전환하며, 보관은 실행 중에는 거절한다", () => {
+  const running = add(task(), "M1");
+  assert.throws(() => archiveTask(running), (e) => e.code === "E_STATE");
+  const cancelled = cancelTask({ ...running, runState:"idle" });
+  assert.equal(cancelled.queueMode, "paused");
+  assert.equal(cancelled.runState, "paused");
+  const archived = archiveTask(cancelled);
+  assert.equal(archived.phase, "archived");
 });

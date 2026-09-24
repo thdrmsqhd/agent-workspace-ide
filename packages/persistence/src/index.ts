@@ -462,6 +462,30 @@ export class StateStore {
     return id;
   }
 
+
+  cancelTask(taskId: string): TaskQueue {
+    return this.transaction(() => {
+      const before = this.getTaskQueue(taskId);
+      const changed = this.db.prepare("UPDATE tasks SET disposition='cancelled',run_state='paused',queue_mode='paused',revision=revision+1,updated_at=? WHERE id=? AND revision=?")
+        .run(new Date().toISOString(), taskId, before.revision);
+      if (changed.changes !== 1) throw new Error("E_REVISION_CONFLICT: 작업 상태가 변경되었습니다.");
+      this.appendEvent(taskId, "task.cancelled", { taskId, revision: before.revision + 1 });
+      return this.getTaskQueue(taskId);
+    });
+  }
+
+  archiveTask(taskId: string): TaskQueue {
+    return this.transaction(() => {
+      const before = this.getTaskQueue(taskId);
+      if (["running","waiting_input","reconnecting","stopping"].includes(before.runState)) throw new Error("실행 중인 작업은 보관할 수 없습니다.");
+      const changed = this.db.prepare("UPDATE tasks SET phase='archived',queue_mode='paused',revision=revision+1,updated_at=? WHERE id=? AND revision=?")
+        .run(new Date().toISOString(), taskId, before.revision);
+      if (changed.changes !== 1) throw new Error("E_REVISION_CONFLICT: 작업 상태가 변경되었습니다.");
+      this.appendEvent(taskId, "task.archived", { taskId, revision: before.revision + 1 });
+      return this.getTaskQueue(taskId);
+    });
+  }
+
   /** requestId 재사용을 payload 해시로 판별하며 상태·메시지·이벤트·operation을 원자적으로 저장한다. */
   applyQueueCommand(input: unknown): StoredResult {
     const command = parseQueueCommand(input);

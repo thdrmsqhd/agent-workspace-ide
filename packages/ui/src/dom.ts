@@ -13,6 +13,11 @@ export interface WorkspaceCallbacks {
   respondInput?(taskId: string, inputRequestId: string, response: string | boolean): void;
   addAttachment?(taskId: string, kind: "file" | "folder" | "image" | "code-selection"): void;
   openFile?(taskId: string, relativePath: string): void;
+  respondInput?(taskId: string, inputRequestId: string, text: string): void;
+  cancelTask?(taskId: string): void;
+  archiveTask?(taskId: string): void;
+  addAttachment?(taskId: string): void;
+  removeAttachment?(taskId: string, attachmentId: string): void;
 }
 
 export interface FileEntry { path: string; isDirectory: boolean }
@@ -131,8 +136,37 @@ export function renderWorkspace(
       const conversation = node(doc, "section", "awi-conversation");
       conversation.append(node(doc, "h2", undefined, task.originalPrompt));
       conversation.append(node(doc, "p", undefined, `상태: ${task.status} · 현재: ${task.currentAction ?? "확인 중"}`));
+      const pending = (data.inputRequests ?? []).filter((item) => item.taskId === task.id);
+      for (const request of pending) {
+        const box = node(doc, "section", "awi-input-request");
+        box.append(node(doc, "p", undefined, `응답 필요: ${request.prompt}`));
+        const answer = node(doc, "input");
+        answer.setAttribute("aria-label", "빠른 답변");
+        answer.addEventListener("keydown", (event) => {
+          if (event.key === "Enter" && !event.isComposing && answer.value.trim()) {
+            callbacks.respondInput?.(task.id, request.id, answer.value);
+          }
+        });
+        box.append(answer, button(doc, "답변", () => {
+          if (answer.value.trim()) callbacks.respondInput?.(task.id, request.id, answer.value);
+        }));
+        conversation.append(box);
+      }
+      const attachments = (data.attachments ?? []).filter((item) => item.taskId === task.id);
+      if (callbacks.addAttachment) conversation.append(button(doc, "첨부 추가", () => callbacks.addAttachment?.(task.id)));
+      if (attachments.length) {
+        const list = node(doc, "ul", "awi-attachments");
+        for (const attachment of attachments) {
+          const item = node(doc, "li", undefined, `${attachment.kind} · ${attachment.label}`);
+          if (callbacks.removeAttachment) item.append(button(doc, "제거", () => callbacks.removeAttachment?.(task.id, attachment.id)));
+          list.append(item);
+        }
+        conversation.append(list);
+      }
       if (callbacks.beginTask && task.status === "discussion") conversation.append(button(doc, "작업 시작", () => callbacks.beginTask?.(task.id)));
       if (callbacks.abortTask && task.status === "running") conversation.append(button(doc, "중단", () => callbacks.abortTask?.(task.id)));
+      if (callbacks.cancelTask && !task.archived) conversation.append(button(doc, "취소", () => callbacks.cancelTask?.(task.id)));
+      if (callbacks.archiveTask && task.status !== "running" && !task.archived) conversation.append(button(doc, "보관", () => callbacks.archiveTask?.(task.id)));
       if (callbacks.resumeTask && (task.status === "paused" || task.status === "failed")) conversation.append(button(doc, "재개", () => callbacks.resumeTask?.(task.id)));
       if (callbacks.cancelTask && !task.archived) conversation.append(button(doc, "작업 취소", () => callbacks.cancelTask?.(task.id)));
       for (const request of task.inputRequests ?? []) {
@@ -194,6 +228,16 @@ export function renderWorkspace(
           if (event.key === "Enter" && !event.shiftKey && !event.isComposing) { event.preventDefault(); send(); }
         });
         conversation.append(input, mode, button(doc, "지시 전달", send));
+      }
+      const review = (data.reviews ?? []).find((item) => item.taskId === task.id);
+      if (review) {
+        const panel = node(doc, "section", "awi-review");
+        panel.append(node(doc, "h3", undefined, "결과 검토"));
+        panel.append(node(doc, "p", undefined, review.summary));
+        panel.append(node(doc, "p", undefined, `변경 파일 ${review.changedFiles.length}개`));
+        for (const check of review.checks) panel.append(node(doc, "p", undefined, `${check.name}: ${check.status}`));
+        for (const url of review.urls) panel.append(node(doc, "p", undefined, url));
+        conversation.append(panel);
       }
       center.append(conversation);
     }

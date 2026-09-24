@@ -47,3 +47,15 @@ test("카드는 생성 순을 유지하고 부모가 불명확한 에이전트�
   assert.equal(tree.roots[0].children[0].id, "child");
   assert.deepEqual(tree.unresolved.map((item) => item.id), ["orphan"]);
 });
+
+test("입력 요청·첨부·검토 데이터는 작업별로 격리된다", () => {
+  const enriched = {
+    ...data,
+    inputRequests:[{id:"I1",taskId:"B",prompt:"승인?"}],
+    attachments:[{id:"X1",taskId:"A",label:"a.txt",kind:"file"}],
+    reviews:[{taskId:"A",summary:"완료",changedFiles:["a.txt"],checks:[{name:"unit",status:"not_run"}],urls:[]}]
+  };
+  assert.equal(enriched.inputRequests.filter((item)=>item.taskId==="A").length,0);
+  assert.equal(enriched.attachments.filter((item)=>item.taskId==="A").length,1);
+  assert.equal(enriched.reviews.find((item)=>item.taskId==="A").checks[0].status,"not_run");
+});
