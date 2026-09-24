@@ -487,19 +487,6 @@ export class StateStore {
     });
   }
 
-  archiveTask(taskId: string): TaskQueue {
-    return this.transaction(() => {
-      const before = this.getTaskQueue(taskId);
-      if (["running","waiting_input","reconnecting","stopping"].includes(before.runState)) throw new Error("실행 중인 작업은 보관할 수 없습니다.");
-      const changed = this.db.prepare("UPDATE tasks SET phase='archived',queue_mode='paused',revision=revision+1,updated_at=? WHERE id=? AND revision=?")
-        .run(new Date().toISOString(), taskId, before.revision);
-      if (changed.changes !== 1) throw new Error("E_REVISION_CONFLICT: 작업 상태가 변경되었습니다.");
-      this.appendEvent(taskId, "task.archived", { taskId, revision: before.revision + 1 });
-      return this.getTaskQueue(taskId);
-    });
-  }
-
-
   saveEngineSession(taskId: string, value: { engine: string; sessionFile: string; cwd: string; phase: "discussion" | "execution" }): void {
     if (!value.sessionFile.trim() || !value.cwd.trim()) throw new Error("엔진 세션 경로와 cwd가 필요합니다.");
     this.db.prepare(`
