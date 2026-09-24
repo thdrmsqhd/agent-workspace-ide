@@ -18,6 +18,10 @@ jobs:
           node-version-file: .node-version
           cache: npm
           cache-dependency-path: package-lock.json
+      - name: Install root dependencies
+        run: npm ci
+      - name: Build AWI runtime packages
+        run: npm run build
       - name: Install desktop dependencies
         run: npm --prefix apps/desktop install --ignore-scripts
       - name: Download pinned Open VSX plugins
