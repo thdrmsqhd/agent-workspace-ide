@@ -65,10 +65,10 @@
     "docs/evidence/acceptance/AT-23/steps.txt"
   ],
   "env": {
-    "commit": "898358b",
+    "commit": "826cb8a",
     "node": "v24.19.0",
     "platform": "win32",
     "arch": "x64",
-    "recordedAt": "2026-09-24T12:39:50.671Z"
+    "recordedAt": "2026-09-24T12:48:59.859Z"
   }
 }
