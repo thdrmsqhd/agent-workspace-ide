@@ -24,6 +24,7 @@
     "@awi/attachments": "file:../../packages/attachments",
     "@awi/contracts": "file:../../packages/contracts",
     "@awi/core": "file:../../packages/core",
+    "@awi/diff": "file:../../packages/diff",
     "@awi/engine-omp": "file:../../packages/engine-omp",
     "@awi/persistence": "file:../../packages/persistence",
     "@awi/processes": "file:../../packages/processes",
