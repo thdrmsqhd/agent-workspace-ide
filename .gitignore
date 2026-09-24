@@ -17,3 +17,5 @@ apps/desktop/lib/
 apps/desktop/src-gen/
 apps/desktop/plugins/
 apps/desktop/package-lock.json
+apps/desktop/esbuild.mjs
+apps/desktop/gen-esbuild.*.mjs
