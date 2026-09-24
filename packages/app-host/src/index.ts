@@ -1,7 +1,7 @@
 import { execFile } from "node:child_process";
 import { readFile, readdir } from "node:fs/promises";
-import { join } from "node:path";
-import { pathToFileURL } from "node:url";
+import { isAbsolute, join, relative, sep } from "node:path";
+import { fileURLToPath, pathToFileURL } from "node:url";
 import { promisify } from "node:util";
 import type { StateStore } from "@awi/persistence";
 import { compareText, type DiffModel } from "@awi/diff";
@@ -102,6 +102,17 @@ export class ApplicationController {
   removeAttachment(taskId:string,attachmentId:string):void{this.runtime.removeAttachment(taskId,attachmentId);}
   addCodeSelection(taskId:string,relativePath:string,startLine:number,endLine:number,content:string):string{
     return this.runtime.attachCodeSelection(taskId,relativePath,startLine,endLine,content).id;
+  }
+  addCodeSelectionUri(taskId:string,fileUri:string,startLine:number,endLine:number,content:string):string{
+    const task=this.store.getTaskInfo(taskId);
+    const project=this.store.getProjectInfo(task.projectId);
+    const root=task.worktreePath ?? project.repoPath;
+    const absolute=fileURLToPath(fileUri);
+    const relativePath=relative(root,absolute);
+    if(!relativePath || isAbsolute(relativePath) || relativePath===".." || relativePath.startsWith(".."+sep)){
+      throw new Error("현재 편집기 파일이 선택 작업 경계를 벗어납니다.");
+    }
+    return this.runtime.attachCodeSelection(taskId,relativePath.split(sep).join("/"),startLine,endLine,content).id;
   }
   syncTask(taskId:string):Promise<{inputRequestIds:string[];subagentEvents:number}>{return this.runtime.syncEngineEvents(taskId);}
 

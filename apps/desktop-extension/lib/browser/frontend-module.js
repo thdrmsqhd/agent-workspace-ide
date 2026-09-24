@@ -8,6 +8,7 @@ const {
 const URI=require("@theia/core/lib/common/uri").default;
 const { CommandRegistry }=require("@theia/core/lib/common");
 const { WorkspaceService }=require("@theia/workspace/lib/browser");
+const { EditorManager }=require("@theia/editor/lib/browser");
 const { AWI_SERVICE_PATH }=require("../common/protocol");
 const WIDGET_ID="awi.dashboard";
 
@@ -40,9 +41,9 @@ function renderReviewDiff(container,result){
 }
 
 class AwiDashboardWidget extends BaseWidget{
-  constructor(service,opener,commands,workspace){
+  constructor(service,opener,commands,workspace,editors){
     super();
-    this.service=service;this.opener=opener;this.commands=commands;this.workspace=workspace;this.data={projects:[],tasks:[],agents:[]};this.activeTask=undefined;
+    this.service=service;this.opener=opener;this.commands=commands;this.workspace=workspace;this.editors=editors;this.data={projects:[],tasks:[],agents:[]};this.activeTask=undefined;
     this.importPreview=undefined;this.importSelected=new Set();
     this.id=WIDGET_ID;this.title.label="Agent Workspace";this.title.caption="Agent Workspace";this.title.closable=false;
     this.node.classList.add("awi-dashboard-root");
@@ -197,7 +198,16 @@ class AwiDashboardWidget extends BaseWidget{
         const attachRow=el("div",undefined,"awi-card");const attachKind=el("select");
         for(const k of ["file","folder","image"]){const o=el("option",k);o.value=k;attachKind.append(o);}
         const attachPath=input("워크트리 상대 경로");
-        attachRow.append(attachKind,attachPath,button("첨부 추가",()=>this.action(()=>this.service.addAttachment(task.id,attachKind.value,attachPath.value))));
+        attachRow.append(
+          attachKind,attachPath,
+          button("첨부 추가",()=>this.action(()=>this.service.addAttachment(task.id,attachKind.value,attachPath.value))),
+          button("선택 코드 첨부",()=>this.action(async()=>{
+            const widget=this.editors.currentEditor;if(!widget)throw new Error("현재 코드 편집기가 없습니다.");
+            const editor=widget.editor;const selection=editor.selection;const content=editor.document.getText(selection);
+            if(!content)throw new Error("첨부할 코드 범위를 먼저 선택하세요.");
+            await this.service.addCodeSelectionUri(task.id,editor.uri.toString(),selection.start.line+1,selection.end.line+1,content);
+          }))
+        );
         center.append(attachRow);
         void this.service.attachments(task.id).then(items=>{
           for(const old of center.querySelectorAll(".awi-attachment-row"))old.remove();
@@ -241,7 +251,7 @@ exports.default=new ContainerModule(bind=>{
   bind("AwiBackendProxy").toDynamicValue(ctx=>ctx.container.get(WebSocketConnectionProvider).createProxy(AWI_SERVICE_PATH)).inSingletonScope();
   bind(WidgetFactory).toDynamicValue(ctx=>({
     id:WIDGET_ID,
-    createWidget:()=>new AwiDashboardWidget(ctx.container.get("AwiBackendProxy"),ctx.container.get(OpenerService),ctx.container.get(CommandRegistry),ctx.container.get(WorkspaceService))
+    createWidget:()=>new AwiDashboardWidget(ctx.container.get("AwiBackendProxy"),ctx.container.get(OpenerService),ctx.container.get(CommandRegistry),ctx.container.get(WorkspaceService),ctx.container.get(EditorManager))
   })).inSingletonScope();
   bind(FrontendApplicationContribution).toDynamicValue(ctx=>({
     initializeLayout:async app=>{
