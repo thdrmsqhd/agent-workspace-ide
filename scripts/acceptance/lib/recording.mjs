@@ -90,7 +90,9 @@ export async function assembleMp4({ frames, outPath, fps = 15, width = 1280, cap
   const tailArgs = ["-c:v", "libx264", "-preset", "medium", "-crf", "23", "-movflags", "+faststart", outAbs];
   const scale = `fps=${fps},scale=${width}:-2:flags=lanczos`;
 
-  const fontDir = join(process.env.LOCALAPPDATA ?? workDir, "Temp", "awi-caption-font");
+  // ffmpeg 9는 드라이브 콜론이 든 fontfile 경로를 파싱하지 못하므로 폰트를 프레임 디렉터리에 복사하고
+  // 거기를 작업 디렉터리로 삼는다(증거 디렉터리에는 폰트를 남기지 않는다).
+  const fontDir = dirname(resolve(frames[0].path));
   await mkdir(fontDir, { recursive: true });
   const filter = (await stageCaptionFont(fontDir)) ? captionFilter(captions) : "";
   if (filter) {
