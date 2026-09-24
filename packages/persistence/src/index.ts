@@ -178,6 +178,19 @@ export class StateStore {
     });
   }
 
+  listMessages(taskId: string): Array<{ id:string; role:string; content:string; attachmentIds:string[]; deliveryMode:string; queueState:string; createdAt:string }> {
+    return (this.db.prepare("SELECT id,role,content,attachment_ids_json,delivery_mode,queue_state,created_at FROM messages WHERE task_id=? ORDER BY created_at,id").all(taskId) as Row[])
+      .map((row)=>({
+        id:row.id as string,
+        role:row.role as string,
+        content:row.content as string,
+        attachmentIds:JSON.parse(row.attachment_ids_json as string) as string[],
+        deliveryMode:row.delivery_mode as string,
+        queueState:row.queue_state as string,
+        createdAt:row.created_at as string,
+      }));
+  }
+
   recordImmediateMessage(taskId: string, role: "user" | "assistant" | "system", content: string, attachmentIds: readonly string[] = []): string {
     if (!content.trim() && attachmentIds.length === 0) throw new Error("메시지 내용 또는 첨부가 필요합니다.");
     const id = randomUUID();

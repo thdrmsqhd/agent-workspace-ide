@@ -1,4 +1,7 @@
 import { execFile } from "node:child_process";
+import { readdir } from "node:fs/promises";
+import { join } from "node:path";
+import { pathToFileURL } from "node:url";
 import { promisify } from "node:util";
 import type { StateStore } from "@awi/persistence";
 import type { WorkspaceRuntime } from "@awi/runtime";
@@ -65,6 +68,9 @@ export class ApplicationController {
     return {projects,tasks,agents};
   }
 
+  registerProject(name:string,repoPath:string,defaultBranch:string,model:string,mode:"manual"|"automatic"="manual"):Promise<string>{
+    return this.runtime.registerProject(name,repoPath,defaultBranch,{engine:"omp",model,mode});
+  }
   createRequest(projectId:string,prompt:string):Promise<string>{return this.runtime.createDiscussion(projectId,prompt);}
   beginTask(taskId:string,baseRef?:string):Promise<void>{return this.runtime.startTask(taskId,baseRef);}
   sendTask(taskId:string,text:string,mode:"immediate"|"queued"):Promise<string|undefined>{return this.runtime.send(taskId,text,mode);}
@@ -85,4 +91,29 @@ export class ApplicationController {
     return this.runtime.attachCodeSelection(taskId,relativePath,startLine,endLine,content).id;
   }
   syncTask(taskId:string):Promise<{inputRequestIds:string[];subagentEvents:number}>{return this.runtime.syncEngineEvents(taskId);}
+
+  conversation(taskId:string):Array<{id:string;role:string;content:string;createdAt:string}>{
+    return this.store.listMessages(taskId).map((item)=>({id:item.id,role:item.role,content:item.content,createdAt:item.createdAt}));
+  }
+
+  async files(taskId:string,maxEntries=800):Promise<Array<{path:string;uri:string;isDirectory:boolean}>>{
+    const task=this.store.getTaskInfo(taskId);
+    const project=this.store.getProjectInfo(task.projectId);
+    const root=task.worktreePath ?? project.repoPath;
+    const output:Array<{path:string;uri:string;isDirectory:boolean}>=[];
+    const walk=async(relative:string):Promise<void>=>{
+      if(output.length>=maxEntries)return;
+      const absolute=relative?join(root,relative):root;
+      const entries=await readdir(absolute,{withFileTypes:true});
+      for(const entry of entries.sort((a,b)=>a.name.localeCompare(b.name))){
+        if(output.length>=maxEntries)return;
+        if(entry.name===".git"||entry.name==="node_modules"||entry.isSymbolicLink())continue;
+        const next=relative?relative+"/"+entry.name:entry.name;
+        output.push({path:next,uri:pathToFileURL(join(root,...next.split("/"))).toString(),isDirectory:entry.isDirectory()});
+        if(entry.isDirectory())await walk(next);
+      }
+    };
+    await walk("");
+    return output;
+  }
 }
