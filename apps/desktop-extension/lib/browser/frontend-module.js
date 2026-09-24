@@ -6,6 +6,7 @@ const {
   WebSocketConnectionProvider,OpenerService,open
 }=require("@theia/core/lib/browser");
 const URI=require("@theia/core/lib/common/uri").default;
+const { CommandRegistry }=require("@theia/core/lib/common");
 const { AWI_SERVICE_PATH }=require("../common/protocol");
 const WIDGET_ID="awi.dashboard";
 
@@ -38,9 +39,9 @@ function renderReviewDiff(container,result){
 }
 
 class AwiDashboardWidget extends BaseWidget{
-  constructor(service,opener){
+  constructor(service,opener,commands){
     super();
-    this.service=service;this.opener=opener;this.data={projects:[],tasks:[],agents:[]};this.activeTask=undefined;
+    this.service=service;this.opener=opener;this.commands=commands;this.data={projects:[],tasks:[],agents:[]};this.activeTask=undefined;
     this.importPreview=undefined;this.importSelected=new Set();
     this.id=WIDGET_ID;this.title.label="Agent Workspace";this.title.caption="Agent Workspace";this.title.closable=false;
     this.node.classList.add("awi-dashboard-root");
@@ -145,6 +146,13 @@ class AwiDashboardWidget extends BaseWidget{
         if(task.status==="paused")controls.append(button("재개",()=>this.action(()=>this.service.resumeTask(task.id))));
         controls.append(button("취소",()=>this.action(()=>this.service.cancelTask(task.id))));
         if(task.archived===false && task.status!=="running")controls.append(button("보관",()=>this.action(()=>this.service.archiveTask(task.id))));
+        controls.append(
+          button("작업 터미널",()=>this.action(async()=>{
+            const ctx=await this.service.taskContext(task.id);
+            await this.commands.executeCommand("openInTerminal",new URI(ctx.rootUri));
+          })),
+          button("Run / Debug",()=>this.action(()=>this.commands.executeCommand("debug:toggle")))
+        );
         controls.append(button("결과 검토",()=>this.action(async()=>{
           const review=await this.service.review(task.id);
           const panel=el("section",undefined,"awi-card");panel.append(el("h3","결과 검토"),el("div",`반영 상태: ${review.integrationState}`));
@@ -220,7 +228,7 @@ exports.default=new ContainerModule(bind=>{
   bind("AwiBackendProxy").toDynamicValue(ctx=>ctx.container.get(WebSocketConnectionProvider).createProxy(AWI_SERVICE_PATH)).inSingletonScope();
   bind(WidgetFactory).toDynamicValue(ctx=>({
     id:WIDGET_ID,
-    createWidget:()=>new AwiDashboardWidget(ctx.container.get("AwiBackendProxy"),ctx.container.get(OpenerService))
+    createWidget:()=>new AwiDashboardWidget(ctx.container.get("AwiBackendProxy"),ctx.container.get(OpenerService),ctx.container.get(CommandRegistry))
   })).inSingletonScope();
   bind(FrontendApplicationContribution).toDynamicValue(ctx=>({
     initializeLayout:async app=>{

@@ -57,6 +57,7 @@ class AwiBackendService {
   async addAttachment(taskId,kind,relativePath){return (await this.controller()).addAttachment(taskId,kind,relativePath);}
   async removeAttachment(taskId,attachmentId){return (await this.controller()).removeAttachment(taskId,attachmentId);}
   async syncTask(taskId){return (await this.controller()).syncTask(taskId);}
+  async taskContext(taskId){return (await this.controller()).taskContext(taskId);}
   async conversation(taskId){return (await this.controller()).conversation(taskId);}
   async review(taskId){return (await this.controller()).review(taskId);}
   async fileDiff(taskId,relativePath){return (await this.controller()).fileDiff(taskId,relativePath);}

@@ -105,6 +105,13 @@ export class ApplicationController {
   }
   syncTask(taskId:string):Promise<{inputRequestIds:string[];subagentEvents:number}>{return this.runtime.syncEngineEvents(taskId);}
 
+  taskContext(taskId:string):{taskId:string;rootPath:string;rootUri:string;phase:string;runState:string}{
+    const task=this.store.getTaskInfo(taskId);
+    const project=this.store.getProjectInfo(task.projectId);
+    const rootPath=task.worktreePath ?? project.repoPath;
+    return {taskId,rootPath,rootUri:pathToFileURL(rootPath).toString(),phase:task.phase,runState:task.runState};
+  }
+
   conversation(taskId:string):Array<{id:string;role:string;content:string;createdAt:string}>{
     return this.store.listMessages(taskId).map((item)=>({id:item.id,role:item.role,content:item.content,createdAt:item.createdAt}));
   }
