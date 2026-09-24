@@ -4,7 +4,7 @@
 
 | REQ | 구현 상태 | 코드/근거 | 남은 수용 검증 |
 | --- | --- | --- | --- |
-| 001 | 구현 경로 있음 | `apps/desktop` Theia/Electron 독립 셸, `desktop:build`, `npm run dev` | Windows 네이티브 production build·실행·패키징 |
+| 001 | 구현 경로 있음 | `apps/desktop` Theia/Electron 독립 셸, `desktop:build`, `npm run dev` | MSVC 네이티브 애드온으로 만든 릴리스 패키지의 CI 검증([검증용 빌드 기록](evidence/win-packaging/README.md)) |
 | 002,003,009,011,049,050 | 구현 | `packages/ui` 대시보드·새 요청·카드·작업 탭·4영역 DOM | 실제 desktop host 화면 AT |
 | 004 | 구현 + 엔진 검증 | discussion OMP overlay: read/glob/grep/todo, write/shell/MCP 차단 | 제품 desktop에서 동일 정책 재확인 |
 | 005,006,045 | 구현 | SQLite discussion 보존, `WorkspaceRuntime.startTask`, baseRef, worktree | 실제 UI 시작 흐름 |
@@ -39,7 +39,7 @@
 
 코드 구현 자체의 주요 공백은 줄였지만 다음은 외부 실행 증거가 필요하다.
 
-1. Windows Electron native build/패키징과 제품 셸에서 dashboard/runtime을 실제 구동하는 AT.
+1. MSVC 네이티브 애드온으로 만든 릴리스 패키지의 CI 검증과, 제품 셸에서 dashboard/runtime을 실제 구동하는 AT. 로컬에서는 MinGW(UCRT)로 애드온을 대체 빌드해 `theia build`·패키징·기동 확인까지 진행했다(키맵 애드온은 스텁, [기록](evidence/win-packaging/README.md)).
 2. TV-001의 Java/Python 자동완성·선언 이동·진단·rename·debug 변수 전체 검증과 TV-002.
 3. OMP 18.2.5 raw abort 실패를 제품 process-tree fallback으로 감싼 TV-004 재검증, 기존 세션 이전 TV-007.
 4. 실제 3개/12개 동시 작업 메모리 baseline/candidate 측정과 장시간 PERF.
