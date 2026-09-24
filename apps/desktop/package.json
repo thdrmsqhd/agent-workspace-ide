@@ -39,13 +39,14 @@
     "electron-builder": "26.0.12"
   },
   "scripts": {
-    "rebuild": "npm run rebuild:ffmpeg && theia rebuild:electron --cacheRoot ..",
+    "rebuild": "npm run rebuild:ffmpeg && theia rebuild:electron --cacheRoot .. && npm run rebuild:native",
     "build": "theia build --app-target=electron --mode production",
     "download:plugins": "node ../../scripts/download-desktop-plugins.mjs",
     "start": "theia start",
     "package": "electron-builder --win nsis portable --publish never",
     "package:preview": "electron-builder --dir --publish never",
-    "rebuild:ffmpeg": "npm rebuild @theia/ffmpeg --foreground-scripts"
+    "rebuild:ffmpeg": "npm rebuild @theia/ffmpeg --foreground-scripts",
+    "rebuild:native": "npm rebuild @vscode/windows-ca-certs --foreground-scripts"
   },
   "theia": {
     "target": "electron"
