@@ -5,6 +5,11 @@ on:
     branches: [main]
     paths:
       - "apps/desktop/**"
+      - "apps/desktop-extension/**"
+      - "packages/**"
+      - "package.json"
+      - "package-lock.json"
+      - "scripts/package-windows-app.mjs"
       - ".github/workflows/desktop-windows.yml"
   workflow_dispatch:
 
