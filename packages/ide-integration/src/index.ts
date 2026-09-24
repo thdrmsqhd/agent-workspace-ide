@@ -200,3 +200,36 @@ export class GlobalExtensionRegistry {
     return this.list();
   }
 }
+
+export interface ServerRegistration {
+  readonly taskId:string;
+  readonly name:string;
+  readonly processId:number;
+  readonly port:number;
+  readonly url:string;
+  readonly state:"running"|"exited";
+}
+export class ServerRegistry {
+  readonly #servers=new Map<string,ServerRegistration>();
+  register(lease:PortLease,processId:number,url:string):ServerRegistration{
+    if(!Number.isInteger(processId)||processId<=0)throw new Error("서버 PID가 올바르지 않습니다.");
+    const parsed=new URL(url);
+    if(!["http:","https:"].includes(parsed.protocol))throw new Error("서버 URL은 HTTP(S)여야 합니다.");
+    if(!["127.0.0.1","localhost","::1"].includes(parsed.hostname))throw new Error("등록된 로컬 서버 URL만 허용합니다.");
+    const effectivePort=parsed.port?Number(parsed.port):(parsed.protocol==="https:"?443:80);
+    if(effectivePort!==lease.port)throw new Error("서버 URL 포트가 lease와 다릅니다.");
+    const item={taskId:lease.taskId,name:lease.name,processId,port:lease.port,url:parsed.toString(),state:"running" as const};
+    this.#servers.set(`${lease.taskId}:${lease.name}`,item);
+    return item;
+  }
+  markExited(taskId:string,name:string):void{
+    const key=`${taskId}:${name}`;const current=this.#servers.get(key);if(!current)return;
+    this.#servers.set(key,{...current,state:"exited"});
+  }
+  get(taskId:string,name:string):ServerRegistration|undefined{return this.#servers.get(`${taskId}:${name}`);}
+  open(taskId:string,name:string):void{
+    const current=this.get(taskId,name);
+    if(!current||current.state!=="running")throw new Error("실행 중인 서버만 브라우저로 열 수 있습니다.");
+    openExternalUrl(current.url);
+  }
+}

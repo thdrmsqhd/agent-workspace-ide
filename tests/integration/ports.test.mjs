@@ -20,3 +20,17 @@ test("선점 포트는 충돌을 명시하고 동적 포트로 독립 서버를 
   assert.notEqual(a.port, b.port);
   assert.match(a.url, /^http:\/\/127\.0\.0\.1:/);
 });
+
+test("서버 URL은 실제 lease와 일치하는 로컬 주소만 등록한다", async (t) => {
+  const { ServerRegistry }=await import("@awi/ide-integration");
+  const manager=new PortLeaseManager();
+  t.after(()=>manager.releaseTask("T"));
+  const lease=await manager.reserve("T","api");
+  const registry=new ServerRegistry();
+  const item=registry.register(lease,12345,lease.url);
+  assert.equal(item.state,"running");
+  assert.throws(()=>registry.register(lease,12345,"http://example.com:"+lease.port),/로컬/);
+  assert.throws(()=>registry.register(lease,12345,"http://127.0.0.1:"+(lease.port+1)),/lease/);
+  registry.markExited("T","api");
+  assert.throws(()=>registry.open("T","api"),/실행 중/);
+});

@@ -119,3 +119,26 @@ export async function resolveExistingWithin(worktreePath: string, relativePath: 
   if (!actual.startsWith(root + sep)) throw new Error("링크가 작업 경계를 벗어납니다.");
   return actual;
 }
+
+export interface RemoveWorktreeRequest {
+  readonly repoPath:string;
+  readonly taskId:string;
+  readonly journalDirectory:string;
+  readonly deleteBranch?:boolean;
+}
+export async function removeOwnedWorktree(request:RemoveWorktreeRequest):Promise<void>{
+  const journal=await readWorktreeJournal(request.journalDirectory,request.taskId);
+  if(journal.stage!=="created")throw new Error("생성 완료가 확인되지 않은 워크트리는 자동 정리하지 않습니다.");
+  const repo=await inspectRepository(request.repoPath);
+  if(repo.repoKey!==journal.repoKey)throw new Error("워크트리 소유 저장소가 다릅니다.");
+  const target=await inspectRepository(journal.worktreePath);
+  if(target.repoKey!==journal.repoKey)throw new Error("정리 대상 워크트리가 다른 저장소입니다.");
+  const status=await git(journal.worktreePath,["status","--porcelain=v1","--untracked-files=all"]);
+  if(status)throw new Error("미반영 변경이 있어 워크트리 정리를 보류합니다.");
+  await git(repo.repoPath,["worktree","remove","--",journal.worktreePath]);
+  if(request.deleteBranch===true){
+    const merged=await git(repo.repoPath,["branch","--merged",repo.currentBranch??"HEAD","--format=%(refname:short)"]);
+    if(!merged.split(/\r?\n/u).includes(journal.branchName))throw new Error("병합되지 않은 작업 브랜치는 삭제하지 않습니다.");
+    await git(repo.repoPath,["branch","-d","--",journal.branchName]);
+  }
+}

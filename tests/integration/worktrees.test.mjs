@@ -2,7 +2,7 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import { execFile } from "node:child_process";
 import { randomUUID } from "node:crypto";
-import { mkdtemp, mkdir, readFile, rm, symlink, writeFile } from "node:fs/promises";
+import { mkdtemp, mkdir, readFile, rm, stat, symlink, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { promisify } from "node:util";
@@ -40,4 +40,20 @@ test("서로 다른 작업은 분리된 Git 워크트리를 만들고 원본 편
   } catch (error) {
     if (error.code !== "EPERM") throw error;
   }
+});
+
+test("미반영 변경이 있는 작업 워크트리는 자동 정리하지 않는다", async (t) => {
+  const directory=await mkdtemp(join(tmpdir(),"awi-clean-"));
+  t.after(()=>rm(directory,{recursive:true,force:true}));
+  const repoPath=join(directory,"repo");await mkdir(repoPath);
+  await run("git",["init","-b","main"],{cwd:repoPath});
+  await run("git",["-c","user.name=Test","-c","user.email=test@example.invalid","commit","--allow-empty","-m","base"],{cwd:repoPath});
+  const taskId=randomUUID();
+  const journal=await prepareWorktree({repoPath,taskId,worktreeRoot:join(directory,"wt"),journalDirectory:join(directory,"journals"),baseRef:"main"});
+  await writeFile(join(journal.worktreePath,"dirty.txt"),"dirty");
+  const { removeOwnedWorktree }=await import("@awi/worktrees");
+  await assert.rejects(removeOwnedWorktree({repoPath,taskId,journalDirectory:join(directory,"journals")}),/미반영/);
+  await rm(join(journal.worktreePath,"dirty.txt"));
+  await removeOwnedWorktree({repoPath,taskId,journalDirectory:join(directory,"journals")});
+  await assert.rejects(stat(journal.worktreePath),/ENOENT/);
 });
