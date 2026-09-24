@@ -166,3 +166,5 @@ export function projectCards(data: WorkspaceData, projectId: string): { active: 
     archived: tasks.filter((item) => item.archived),
   };
 }
+
+export { renderDiffView } from "./diff-view.js";

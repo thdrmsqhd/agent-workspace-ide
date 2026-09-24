@@ -24,3 +24,15 @@
 .awi-file-list { margin: 0; padding: 0; list-style: none; }
 .awi-file-list .awi-button { width: 100%; }
 @media (max-width: 1100px) { .awi-files { flex-basis: 44px; overflow: hidden; } .awi-sessions { flex-basis: 240px; } }
+
+.awi-diff { display:grid; grid-template-columns:minmax(0,1fr) 90px minmax(0,1fr); height:100%; min-height:320px; border:1px solid #364051; }
+.awi-diff-pane { overflow:auto; min-width:0; background:#111722; }
+.awi-diff-lines { margin:0; padding:8px 0 24px 54px; font:13px/1.55 ui-monospace,Consolas,monospace; white-space:pre; }
+.awi-diff-lines li { padding:0 8px; min-height:20px; }
+.awi-diff-lines li::marker { color:#74839a; }
+.awi-diff-lines .awi-insert { background:rgba(70,160,90,.20); }
+.awi-diff-lines .awi-delete { background:rgba(210,70,70,.18); }
+.awi-diff-lines .awi-replace { background:rgba(200,155,60,.16); }
+.awi-diff-links { position:relative; overflow:auto; border-left:1px solid #364051; border-right:1px solid #364051; background:#182131; }
+.awi-diff-link { display:block; width:100%; margin:6px 0; border:0; border-top:2px solid #70839e; background:transparent; color:#b9c9dd; font:11px system-ui; cursor:pointer; }
+.awi-diff-toolbar { display:flex; gap:6px; align-items:center; padding:6px; border-bottom:1px solid #364051; }
