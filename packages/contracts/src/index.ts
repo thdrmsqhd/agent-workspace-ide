@@ -125,10 +125,6 @@ function hasOnly(record: Record<string, unknown>, allowed: readonly string[]): b
   return Object.keys(record).every((key) => allowed.includes(key));
 }
 
-function isUuidArray(value: unknown): value is string[] {
-  return Array.isArray(value) && value.every(isUuid);
-}
-
 export function isAttachmentId(value: unknown): value is string {
   return isUuid(value) || (typeof value === "string" && /^[0-9a-f]{64}$/i.test(value));
 }
