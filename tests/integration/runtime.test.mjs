@@ -20,7 +20,6 @@ const fake = fileURLToPath(new URL("../fixtures/fake-omp-engine.mjs", import.met
 
 test("프로젝트 등록→논의→명시적 워크트리 시작→대기열 전달→중단/재개 흐름", async (t) => {
   const root = await mkdtemp(join(tmpdir(),"awi-runtime-"));
-  t.after(() => rm(root,{recursive:true,force:true}));
   const repo = join(root,"repo"); await mkdir(repo);
   await run("git",["init","-b","main"],{cwd:repo});
   await run("git",["config","user.name","Test"],{cwd:repo});
@@ -43,7 +42,7 @@ test("프로젝트 등록→논의→명시적 워크트리 시작→대기열 �
     store,settings,supervisor,engineFactory:testFactory,
     worktreeRoot:join(root,"worktrees"),journalDirectory:join(root,"journals")
   });
-  t.after(async()=>{await runtime.shutdown();store.close();});
+  t.after(async()=>{await runtime.shutdown();store.close();await rm(root,{recursive:true,force:true,maxRetries:5,retryDelay:100});});
 
   const projectId = await runtime.registerProject("P",repo,"main",{engine:"omp",model:"fake",mode:"manual"});
   const same = await runtime.registerProject("P2",repo,"main",{engine:"omp",model:"fake",mode:"manual"});
@@ -71,9 +70,8 @@ test("프로젝트 등록→논의→명시적 워크트리 시작→대기열 �
 
 
 test("저장된 첨부를 실제 OMP message/images 계약으로 변환한다", async (t) => {
-  const root = await mkdtemp(join(tmpdir(), "awi-runtime-attachments-"));
-  t.after(() => rm(root, { recursive: true, force: true }));
-  const repo = join(root, "repo");
+  const root = await mkdtemp(join(tmpdir(),"awi-runtime-attachments-"));
+  const repo = join(root,"repo");
   await mkdir(repo);
   await mkdir(join(repo, "docs"));
   await writeFile(join(repo, "docs", "note.txt"), "attached text\n");
@@ -95,7 +93,7 @@ test("저장된 첨부를 실제 OMP message/images 계약으로 변환한다", 
     store, settings, supervisor, engineFactory: { async create() { return adapter; } },
     worktreeRoot: join(root, "worktrees"), journalDirectory: join(root, "journals"),
   });
-  t.after(async () => { await runtime.shutdown(); store.close(); });
+  t.after(async () => { await runtime.shutdown(); store.close(); await rm(root, { recursive: true, force: true, maxRetries: 5, retryDelay: 100 }); });
 
   const projectId = store.createProject("P", repo, "runtime-attachment-" + Date.now(), "main");
   settings.setProjectDefault(projectId, { engine: "omp", model: "fake", mode: "manual" });

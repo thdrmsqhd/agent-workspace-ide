@@ -8,9 +8,8 @@ import { SettingsRegistry } from "@awi/settings";
 
 test("task settings와 OMP session artifact는 앱 메모리와 독립적으로 복원 가능하다",async(t)=>{
  const dir=await mkdtemp(join(tmpdir(),"awi-restore-"));
- t.after(()=>rm(dir,{recursive:true,force:true}));
  const store=await StateStore.open(join(dir,"state.sqlite"));
- t.after(()=>store.close());
+ t.after(async()=>{store.close();await rm(dir,{recursive:true,force:true,maxRetries:5,retryDelay:100});});
  const project=store.createProject("P",dir,"key-"+Date.now(),"main");
  const task=store.createDiscussion(project,"x");
  const snapshot={taskId:task,projectId:project,engine:"omp",model:"m",mode:"manual",capturedAt:new Date().toISOString(),sourceRevision:0};

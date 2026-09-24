@@ -8,9 +8,8 @@ import { StateStore } from "@awi/persistence";
 
 test("앱 호스트는 저장된 프로젝트/작업을 엔진 부재 상태에서도 대시보드로 복원한다",async(t)=>{
  const dir=await mkdtemp(join(tmpdir(),"awi-host-"));
- t.after(()=>rm(dir,{recursive:true,force:true}));
  const store=await StateStore.open(join(dir,"state.sqlite"));
- t.after(()=>store.close());
+ t.after(async()=>{store.close();await rm(dir,{recursive:true,force:true,maxRetries:5,retryDelay:100});});
  const project=store.createProject("P",dir,"host-"+Date.now(),"main");
  store.createDiscussion(project,"원래 요청");
  const runtime={async subagents(){throw new Error("offline");}};
