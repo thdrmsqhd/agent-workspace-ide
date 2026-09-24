@@ -1,0 +1,74 @@
+{
+  "id": "AT-23",
+  "status": "PASS",
+  "detail": "core/ui/contracts 6개 파일에 엔진 원시 참조 0건, 평가 게이트 4개 경계(미측정 보류·85% 후보·70% 불가·부분 측정 보류) 확인, 평가 문서 원본 복원 확인.",
+  "title": "엔진 경계 의존성 검사와 재사용 후보 평가 게이트",
+  "scenario": "scripts/acceptance/scenarios/at-23-dependency-gate.mjs",
+  "precondition": "core·ui·contracts 소스를 정적 스캔하고, docs/evidence/reuse-evaluation.json을 합성 입력으로 바꿔 게이트 판정을 확인한다(원본은 그대로 복원).",
+  "steps": [
+    {
+      "name": "스캔 대상",
+      "detail": "packages\\core\\src (2개 파일)",
+      "result": "note"
+    },
+    {
+      "name": "스캔 대상",
+      "detail": "packages\\ui\\src (3개 파일)",
+      "result": "note"
+    },
+    {
+      "name": "스캔 대상",
+      "detail": "packages\\contracts\\src (1개 파일)",
+      "result": "note"
+    },
+    {
+      "name": "엔진 경계 정적 스캔",
+      "detail": "6개 소스 파일, 금지 패턴 6종 0건",
+      "result": "ok"
+    },
+    {
+      "name": "평가 기준",
+      "detail": "8개 기준, 가중치 합 100",
+      "result": "note"
+    },
+    {
+      "name": "게이트 문서 원본",
+      "detail": "검증 0.0% / 측정 0.0% → undetermined",
+      "result": "ok"
+    },
+    {
+      "name": "게이트 전부 측정·통과 85%",
+      "detail": "검증 85.0% / 측정 100.0% → reuse-candidate",
+      "result": "ok"
+    },
+    {
+      "name": "게이트 전부 측정·통과 70%",
+      "detail": "검증 70.0% / 측정 100.0% → do-not-fork",
+      "result": "ok"
+    },
+    {
+      "name": "게이트 일부만 측정·측정분 전부 통과",
+      "detail": "검증 50.0% / 측정 50.0% → undetermined",
+      "result": "ok"
+    },
+    {
+      "name": "평가 문서 복원",
+      "detail": "sha256 14b8b0a35555… 일치",
+      "result": "ok"
+    }
+  ],
+  "expected": "OMP 원시 타입이 core/UI에 없고, 미측정 항목이 80% 근거로 둔갑하지 않는다.",
+  "actual": "문서 원본→undetermined | 전부 측정·통과 85%→reuse-candidate | 전부 측정·통과 70%→do-not-fork | 일부만 측정·측정분 전부 통과→undetermined",
+  "artifacts": [
+    "docs/evidence/acceptance/AT-23/dependency-scan.json",
+    "docs/evidence/acceptance/AT-23/reuse-gate.json",
+    "docs/evidence/acceptance/AT-23/steps.txt"
+  ],
+  "env": {
+    "commit": "898358b",
+    "node": "v24.19.0",
+    "platform": "win32",
+    "arch": "x64",
+    "recordedAt": "2026-09-24T12:39:50.671Z"
+  }
+}

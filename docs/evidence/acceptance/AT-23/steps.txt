@@ -1,0 +1,10 @@
+note	스캔 대상	packages\core\src (2개 파일)
+note	스캔 대상	packages\ui\src (3개 파일)
+note	스캔 대상	packages\contracts\src (1개 파일)
+ok	엔진 경계 정적 스캔	6개 소스 파일, 금지 패턴 6종 0건
+note	평가 기준	8개 기준, 가중치 합 100
+ok	게이트 문서 원본	검증 0.0% / 측정 0.0% → undetermined
+ok	게이트 전부 측정·통과 85%	검증 85.0% / 측정 100.0% → reuse-candidate
+ok	게이트 전부 측정·통과 70%	검증 70.0% / 측정 100.0% → do-not-fork
+ok	게이트 일부만 측정·측정분 전부 통과	검증 50.0% / 측정 50.0% → undetermined
+ok	평가 문서 복원	sha256 14b8b0a35555… 일치

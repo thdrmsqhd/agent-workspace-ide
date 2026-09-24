@@ -43,6 +43,7 @@
     "perf:collect": "node scripts/perf-collect.mjs",
     "build:environment": "tsc -p packages/environment/tsconfig.json",
     "desktop:build": "node scripts/build-windows-app.mjs",
+    "test:acceptance": "node scripts/acceptance/run.mjs",
     "acceptance:summary": "node scripts/acceptance-summary.mjs",
     "reuse:evaluate": "node scripts/reuse-evaluate.mjs",
     "desktop:install": "npm --prefix apps/desktop install --ignore-scripts --install-links",

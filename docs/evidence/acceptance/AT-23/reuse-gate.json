@@ -1,0 +1,26 @@
+{
+  "문서 원본": {
+    "verifiedPercent": 0,
+    "coveragePercent": 0,
+    "decision": "undetermined",
+    "expected": "undetermined"
+  },
+  "전부 측정·통과 85%": {
+    "verifiedPercent": 85,
+    "coveragePercent": 100,
+    "decision": "reuse-candidate",
+    "expected": "reuse-candidate"
+  },
+  "전부 측정·통과 70%": {
+    "verifiedPercent": 70,
+    "coveragePercent": 100,
+    "decision": "do-not-fork",
+    "expected": "do-not-fork"
+  },
+  "일부만 측정·측정분 전부 통과": {
+    "verifiedPercent": 50,
+    "coveragePercent": 50,
+    "decision": "undetermined",
+    "expected": "undetermined"
+  }
+}

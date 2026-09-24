@@ -1,0 +1,7 @@
+{
+  "baseCommit": "1725b0bd7218a29c0a7603bdd6f98b691622b0aa",
+  "worktreePath": "C:/Users/gbsong/AppData/Local/Temp/awi-at03-eLdysi/worktrees/c5bc3674-c580-49b5-b5e9-3a7409dd8332",
+  "branchName": "refs/heads/awi/task/c5bc3674-c580-49b5-b5e9-3a7409dd8332",
+  "worktreeCount": 2,
+  "engine": "tests/fixtures/fake-omp-engine.mjs"
+}

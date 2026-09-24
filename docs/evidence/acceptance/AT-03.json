@@ -1,0 +1,38 @@
+{
+  "id": "AT-03",
+  "status": "PASS",
+  "detail": "워크트리 하나(메인 포함 2개)·기준 커밋 고정·이중 시작 거부·실패 후 재시도 확인. 엔진은 저장소 시험용 fake-omp-engine 픽스처를 썼다. 이 AT의 기대는 워크트리·기준 커밋·재시도라는 Git 계층 사실이며 엔진 동작을 주장하지 않는다.",
+  "title": "워크트리 준비, 시작 이중 클릭, 준비 실패 후 같은 단계 재시도",
+  "scenario": "scripts/acceptance/scenarios/at-03-start-task.mjs",
+  "precondition": "빈 저장소를 main으로 초기화하고 프로젝트를 등록한 뒤 워크트리 준비를 시도한다.",
+  "steps": [
+    {
+      "name": "없는 기준 ref로 준비 실패",
+      "detail": "워크트리 1개(메인만), phase=discussion, HEAD=1725b0b 유지",
+      "result": "ok"
+    },
+    {
+      "name": "같은 단계 재시도 성공",
+      "detail": "C:/Users/gbsong/AppData/Local/Temp/awi-at03-eLdysi/worktrees/c5bc3674-c580-49b5-b5e9-3a7409dd8332 @ 1725b0b (refs/heads/awi/task/c5bc3674-c580-49b5-b5e9-3a7409dd8332)",
+      "result": "ok"
+    },
+    {
+      "name": "시작 이중 클릭 거부",
+      "detail": "phase=execution이라 두 번째 startTask가 거부되고 워크트리는 2개(메인 포함) 유지",
+      "result": "ok"
+    }
+  ],
+  "expected": "준비 결과가 메인 저장소 + 워크트리 하나, 기준 커밋 고정, 실패한 준비는 원본을 건드리지 않고 같은 단계로 재시도된다.",
+  "actual": "메인 + 워크트리 1개 | 기준 커밋 1725b0b 고정 | 준비 실패 후 같은 단계 재시도 성공",
+  "artifacts": [
+    "docs/evidence/acceptance/AT-03/worktrees.json",
+    "docs/evidence/acceptance/AT-03/steps.txt"
+  ],
+  "env": {
+    "commit": "898358b",
+    "node": "v24.19.0",
+    "platform": "win32",
+    "arch": "x64",
+    "recordedAt": "2026-09-24T12:39:50.370Z"
+  }
+}

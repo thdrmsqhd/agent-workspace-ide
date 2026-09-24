@@ -1,0 +1,113 @@
+{
+  "insert": {
+    "blocks": [
+      {
+        "kind": "insert",
+        "oldStart": 1,
+        "oldEnd": 1,
+        "newStart": 1,
+        "newEnd": 2
+      }
+    ],
+    "precision": "exact",
+    "spacerCount": 0,
+    "oldLines": 2,
+    "newLines": 3
+  },
+  "delete": {
+    "blocks": [
+      {
+        "kind": "delete",
+        "oldStart": 1,
+        "oldEnd": 2,
+        "newStart": 1,
+        "newEnd": 1
+      }
+    ],
+    "precision": "exact",
+    "spacerCount": 0,
+    "oldLines": 3,
+    "newLines": 2
+  },
+  "replace": {
+    "blocks": [
+      {
+        "kind": "replace",
+        "oldStart": 1,
+        "oldEnd": 2,
+        "newStart": 1,
+        "newEnd": 2
+      }
+    ],
+    "precision": "exact",
+    "spacerCount": 0,
+    "oldLines": 3,
+    "newLines": 3
+  },
+  "blank_insert": {
+    "blocks": [
+      {
+        "kind": "insert",
+        "oldStart": 2,
+        "oldEnd": 2,
+        "newStart": 2,
+        "newEnd": 3
+      }
+    ],
+    "precision": "exact",
+    "spacerCount": 0,
+    "oldLines": 3,
+    "newLines": 4
+  },
+  "trailing_newline": {
+    "blocks": [],
+    "precision": "exact",
+    "spacerCount": 0,
+    "oldLines": 1,
+    "newLines": 1
+  },
+  "crlf_to_lf": {
+    "blocks": [
+      {
+        "kind": "replace",
+        "oldStart": 0,
+        "oldEnd": 2,
+        "newStart": 0,
+        "newEnd": 2
+      }
+    ],
+    "precision": "exact",
+    "spacerCount": 0,
+    "oldLines": 2,
+    "newLines": 2
+  },
+  "long_line": {
+    "blocks": [
+      {
+        "kind": "insert",
+        "oldStart": 1,
+        "oldEnd": 1,
+        "newStart": 1,
+        "newEnd": 2
+      }
+    ],
+    "precision": "exact",
+    "spacerCount": 0,
+    "oldLines": 1,
+    "newLines": 2
+  },
+  "too_many_lines": {
+    "blocks": [],
+    "precision": "too_large",
+    "spacerCount": 0,
+    "oldLines": 100001,
+    "newLines": 100002
+  },
+  "too_big": {
+    "blocks": [],
+    "precision": "too_large",
+    "spacerCount": 0,
+    "oldLines": 1,
+    "newLines": 1
+  }
+}

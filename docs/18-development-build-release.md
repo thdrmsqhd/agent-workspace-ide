@@ -32,7 +32,7 @@ apps/desktop과 packages/{contracts,core,engine-omp,worktrees,processes,persiste
 | npm run verify:omp:tv004 | 구현: 하위 에이전트 트리·중단 검증. 모델 호출 발생, CI 미실행 |
 | npm run verify:omp:tv006 | 구현: 읽기 전용 강제 검증. 모델 호출 발생, CI 미실행 |
 | npm run test:windows | 미구현: 실제 PTY·IDE·debug 시나리오 |
-| npm run test:acceptance | 미구현: AT 시나리오 결과 생성 |
+| npm run test:acceptance | 구현: `scripts/acceptance/run.mjs`가 시나리오를 실행하고 `docs/evidence/acceptance/AT-xx.json`을 쓴다. 결과 조회는 `npm run acceptance:summary`. 편집기·셸 화면이 필요한 항목은 제품 셸 구동이 필요하다고 `BLOCKED`와 사유를 남긴다 |
 | npm run perf:collect | 미구현: PERF 측정·원시 결과 저장 |
 | npm run package:win | 구현: scripts/package-windows-app.mjs가 ci→build→desktop install→plugins→rebuild→build→package 순서로 NSIS 설치본과 포터블을 만든다. 두 산출물은 파일명이 분리되어 있다(Setup/Portable). 네이티브 애드온 컴파일에는 Visual Studio Build Tools가 필요하고, 서명 인증서가 없으면 서명은 적용되지 않는다. 릴리스 산출물 판정은 CI desktop-windows 성공이 권위자이며, 2026-09-24 실행(run 35989238780, 9m17s)에서 14단계 전부 통과했다([기록](evidence/win-packaging/README.md)) |
 
