@@ -42,8 +42,7 @@ test("하위 에이전트 구독과 extension UI 응답은 RPC 명령/프레임 
   const adapter=new OmpEngineAdapter(supervisor);
   t.after(()=>adapter.shutdown("T"));
   await adapter.start({taskId:"T",executable:process.execPath,args:[fixture],cwd:process.cwd()});
-  const sub=await adapter.subscribeSubagents("progress");
-  assert.equal(sub.success,true);
+  await adapter.setSubagentSubscription("progress");
   const list=await adapter.getSubagents();
   assert.equal(list.success,true);
   adapter.respondExtensionUi("ui-1",{value:"answer"});

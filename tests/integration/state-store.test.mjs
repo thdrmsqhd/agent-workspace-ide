@@ -168,9 +168,16 @@ test("만료된 입력 요청은 자동 승인하지 않고 expired로 닫는다
 });
 
 test("엔진 세션 참조는 앱 재시작 후 같은 작업 복구에 사용 가능하다", async (t) => {
-  const { store, file, taskId } = await fixture(t);
+  const directory = await mkdtemp(join(tmpdir(), "awi-engine-session-"));
+  t.after(() => rm(directory, { recursive: true, force: true }));
+  const file = join(directory, "state.sqlite");
+  const store = await StateStore.open(file);
+  const project = store.createProject("앱", directory, "engine-session-repo-key", "main");
+  const taskId = store.createDiscussion(project, "원래 요청 전문");
+  store.recordPreparedExecution(taskId, 0, join(directory, "worktree"));
   store.saveEngineSession(taskId,{engine:"omp",sessionFile:"/tmp/session.jsonl",cwd:"/tmp/work",phase:"execution"});
   store.close();
+
   const reopened = await StateStore.open(file);
   assert.deepEqual(reopened.getEngineSession(taskId),{engine:"omp",sessionFile:"/tmp/session.jsonl",cwd:"/tmp/work",phase:"execution"});
   assert.ok(reopened.listRecoverableTaskIds().includes(taskId));
