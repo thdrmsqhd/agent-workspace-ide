@@ -8,12 +8,12 @@
   "steps": [
     {
       "name": "사전 조건",
-      "detail": "격리 홈 C:\\Users\\gbsong\\AppData\\Local\\Temp\\awi-at01-vtw9Dk\\home, 저장소 2개 생성",
+      "detail": "격리 홈 C:\\Users\\gbsong\\AppData\\Local\\Temp\\awi-at01-bxWSWC\\home, 저장소 2개 생성",
       "result": "ok"
     },
     {
       "name": "first-launch: 워크스페이스 없이 대시보드가 뜨지 않아 저장소를 열어 다시 기동",
-      "detail": "C:\\Users\\gbsong\\AppData\\Local\\Temp\\awi-at01-vtw9Dk\\repos\\alpha-project",
+      "detail": "C:\\Users\\gbsong\\AppData\\Local\\Temp\\awi-at01-bxWSWC\\repos\\alpha-project",
       "result": "note"
     },
     {
@@ -28,12 +28,12 @@
     },
     {
       "name": "프로젝트 등록: alpha-project",
-      "detail": "C:\\Users\\gbsong\\AppData\\Local\\Temp\\awi-at01-vtw9Dk\\repos\\alpha-project",
+      "detail": "C:\\Users\\gbsong\\AppData\\Local\\Temp\\awi-at01-bxWSWC\\repos\\alpha-project",
       "result": "ok"
     },
     {
       "name": "프로젝트 등록: beta-project",
-      "detail": "C:\\Users\\gbsong\\AppData\\Local\\Temp\\awi-at01-vtw9Dk\\repos\\beta-project",
+      "detail": "C:\\Users\\gbsong\\AppData\\Local\\Temp\\awi-at01-bxWSWC\\repos\\beta-project",
       "result": "ok"
     },
     {
@@ -48,7 +48,7 @@
     },
     {
       "name": "second-launch: 워크스페이스 없이 대시보드가 뜨지 않아 저장소를 열어 다시 기동",
-      "detail": "C:\\Users\\gbsong\\AppData\\Local\\Temp\\awi-at01-vtw9Dk\\repos\\alpha-project",
+      "detail": "C:\\Users\\gbsong\\AppData\\Local\\Temp\\awi-at01-bxWSWC\\repos\\alpha-project",
       "result": "note"
     },
     {
@@ -69,10 +69,10 @@
     "after-restart: docs\\evidence\\acceptance\\AT-01\\after-restart.png"
   ],
   "env": {
-    "commit": "be1ee1f",
+    "commit": "fa10fad",
     "node": "v24.19.0",
     "platform": "win32",
     "arch": "x64",
-    "recordedAt": "2026-09-24T12:58:21.488Z"
+    "recordedAt": "2026-09-24T13:04:24.953Z"
   }
 }

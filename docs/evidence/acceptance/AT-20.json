@@ -8,7 +8,7 @@
   "steps": [
     {
       "name": "워크트리 준비",
-      "detail": "C:\\Users\\gbsong\\AppData\\Local\\Temp\\awi-at20-z9nDIf\\worktrees\\bd72ea0f-6ffa-4978-a19b-0decbd8b3a80",
+      "detail": "C:\\Users\\gbsong\\AppData\\Local\\Temp\\awi-at20-SAQmIz\\worktrees\\fec3cb33-2a76-442a-ba47-4c4ce18e2155",
       "result": "ok"
     },
     {
@@ -48,7 +48,7 @@
     },
     {
       "name": "안전한 정리",
-      "detail": "워크트리 제거, 브랜치 awi/task/bd72ea0f… 보존, 원본 HEAD 유지",
+      "detail": "워크트리 제거, 브랜치 awi/task/fec3cb33… 보존, 원본 HEAD 유지",
       "result": "ok"
     },
     {
@@ -69,10 +69,10 @@
     "docs/evidence/acceptance/AT-20/steps.txt"
   ],
   "env": {
-    "commit": "be1ee1f",
+    "commit": "fa10fad",
     "node": "v24.19.0",
     "platform": "win32",
     "arch": "x64",
-    "recordedAt": "2026-09-24T12:58:25.941Z"
+    "recordedAt": "2026-09-24T13:04:29.387Z"
   }
 }

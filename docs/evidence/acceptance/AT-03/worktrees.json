@@ -1,7 +1,7 @@
 {
-  "baseCommit": "33dd6dde7fc94c45d7a961396bba22d57137f446",
-  "worktreePath": "C:/Users/gbsong/AppData/Local/Temp/awi-at03-EidQf9/worktrees/03b1e418-d616-4339-a3c7-6985d9c06581",
-  "branchName": "refs/heads/awi/task/03b1e418-d616-4339-a3c7-6985d9c06581",
+  "baseCommit": "c7da99f0c853fbdc65f67ecb3ecd3934ce0689f4",
+  "worktreePath": "C:/Users/gbsong/AppData/Local/Temp/awi-at03-3ZabhY/worktrees/218fcd1c-cc15-46e0-9c24-69db4f768996",
+  "branchName": "refs/heads/awi/task/218fcd1c-cc15-46e0-9c24-69db4f768996",
   "worktreeCount": 2,
   "engine": "tests/fixtures/fake-omp-engine.mjs"
 }

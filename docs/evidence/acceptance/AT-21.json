@@ -49,10 +49,10 @@
     "docs/evidence/acceptance/AT-21/steps.txt"
   ],
   "env": {
-    "commit": "be1ee1f",
+    "commit": "fa10fad",
     "node": "v24.19.0",
     "platform": "win32",
     "arch": "x64",
-    "recordedAt": "2026-09-24T12:58:25.993Z"
+    "recordedAt": "2026-09-24T13:04:29.440Z"
   }
 }

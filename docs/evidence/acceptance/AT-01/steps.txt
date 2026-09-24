@@ -1,10 +1,10 @@
-ok	사전 조건	격리 홈 C:\Users\gbsong\AppData\Local\Temp\awi-at01-vtw9Dk\home, 저장소 2개 생성
-note	first-launch: 워크스페이스 없이 대시보드가 뜨지 않아 저장소를 열어 다시 기동	C:\Users\gbsong\AppData\Local\Temp\awi-at01-vtw9Dk\repos\alpha-project
+ok	사전 조건	격리 홈 C:\Users\gbsong\AppData\Local\Temp\awi-at01-bxWSWC\home, 저장소 2개 생성
+note	first-launch: 워크스페이스 없이 대시보드가 뜨지 않아 저장소를 열어 다시 기동	C:\Users\gbsong\AppData\Local\Temp\awi-at01-bxWSWC\repos\alpha-project
 note	first-launch: 워크스페이스 신뢰 모달 닫기	클릭
 ok	앱 실행	제목="Agent Workspace - alpha-project - Eclipse Theia", 대시보드 3영역 확인
-ok	프로젝트 등록: alpha-project	C:\Users\gbsong\AppData\Local\Temp\awi-at01-vtw9Dk\repos\alpha-project
-ok	프로젝트 등록: beta-project	C:\Users\gbsong\AppData\Local\Temp\awi-at01-vtw9Dk\repos\beta-project
+ok	프로젝트 등록: alpha-project	C:\Users\gbsong\AppData\Local\Temp\awi-at01-bxWSWC\repos\alpha-project
+ok	프로젝트 등록: beta-project	C:\Users\gbsong\AppData\Local\Temp\awi-at01-bxWSWC\repos\beta-project
 ok	우측 프로젝트·세션 영역	프로젝트 · 세션 | alpha-project | beta-project
 ok	앱 종료	재시작 검증을 위해 종료
-note	second-launch: 워크스페이스 없이 대시보드가 뜨지 않아 저장소를 열어 다시 기동	C:\Users\gbsong\AppData\Local\Temp\awi-at01-vtw9Dk\repos\alpha-project
+note	second-launch: 워크스페이스 없이 대시보드가 뜨지 않아 저장소를 열어 다시 기동	C:\Users\gbsong\AppData\Local\Temp\awi-at01-bxWSWC\repos\alpha-project
 ok	재시작 복원	프로젝트 · 세션 | alpha-project | beta-project
