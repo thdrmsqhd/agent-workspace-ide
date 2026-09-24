@@ -78,13 +78,16 @@
       "target": [
         "nsis",
         "portable"
-      ],
-      "artifactName": "Agent-Workspace-IDE-${version}-${arch}.${ext}"
+      ]
     },
     "nsis": {
+      "artifactName": "Agent-Workspace-IDE-Setup-${version}-${arch}.${ext}",
       "oneClick": false,
       "perMachine": false,
       "allowToChangeInstallationDirectory": true
+    },
+    "portable": {
+      "artifactName": "Agent-Workspace-IDE-Portable-${version}-${arch}.${ext}"
     }
   }
 }
