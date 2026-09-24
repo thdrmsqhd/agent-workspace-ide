@@ -36,3 +36,15 @@ test("OMP abort가 자손 중단을 보장하지 못하면 엔진 그룹만 강�
   assert.equal(snapshots.find((item) => item.role === "engine").state, "exited");
   assert.equal(snapshots.find((item) => item.pid === server.pid).state, "running");
 });
+
+test("하위 에이전트 구독과 extension UI 응답은 RPC 명령/프레임 경계를 사용한다", async (t) => {
+  const supervisor=new ProcessTreeSupervisor();
+  const adapter=new OmpEngineAdapter(supervisor);
+  t.after(()=>adapter.shutdown("T"));
+  await adapter.start({taskId:"T",executable:process.execPath,args:[fixture],cwd:process.cwd()});
+  const sub=await adapter.subscribeSubagents("progress");
+  assert.equal(sub.success,true);
+  const list=await adapter.getSubagents();
+  assert.equal(list.success,true);
+  adapter.respondExtensionUi("ui-1",{value:"answer"});
+});

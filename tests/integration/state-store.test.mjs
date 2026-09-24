@@ -126,7 +126,7 @@ test("기존 v1 DB를 변경하기 전에 온라인 백업하고 v2로 올린다
   store.createProject("원본", directory, "repo-key", "main");
   store.close();
   const old = new DatabaseSync(file);
-  old.exec("DROP TABLE view_states; DROP TABLE drafts; DROP TABLE attachments; DROP TABLE settings_snapshots; DROP TABLE input_requests; DROP TABLE integration_journals; DROP TABLE process_records; DROP TABLE artifacts; DELETE FROM schema_migrations WHERE id>=2;");
+  old.exec("DROP TABLE view_states; DROP TABLE drafts; DROP TABLE attachments; DROP TABLE settings_snapshots; DROP TABLE input_requests; DROP TABLE integration_journals; DROP TABLE process_records; DROP TABLE artifacts; DROP TABLE engine_sessions; DELETE FROM schema_migrations WHERE id>=2;");
   old.close();
   const upgraded = await StateStore.open(file);
   const backups = (await readdir(directory)).filter((name) => name.startsWith("state-backup-") && name.endsWith(".sqlite"));
@@ -165,4 +165,14 @@ test("만료된 입력 요청은 자동 승인하지 않고 expired로 닫는다
   const input = store.createInputRequest(taskId, { prompt:"승인?" }, "2000-01-01T00:00:00.000Z");
   assert.throws(() => store.respondInputRequest(input, { allow:true }), /E_INPUT_EXPIRED/);
   assert.equal(store.listPendingInputRequests(taskId).length, 0);
+});
+
+test("엔진 세션 참조는 앱 재시작 후 같은 작업 복구에 사용 가능하다", async (t) => {
+  const { store, file, taskId } = await fixture(t);
+  store.saveEngineSession(taskId,{engine:"omp",sessionFile:"/tmp/session.jsonl",cwd:"/tmp/work",phase:"execution"});
+  store.close();
+  const reopened = await StateStore.open(file);
+  assert.deepEqual(reopened.getEngineSession(taskId),{engine:"omp",sessionFile:"/tmp/session.jsonl",cwd:"/tmp/work",phase:"execution"});
+  assert.ok(reopened.listRecoverableTaskIds().includes(taskId));
+  reopened.close();
 });

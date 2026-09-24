@@ -7,7 +7,7 @@ import {
   abort, claimNext, confirmStopped, deleteQueued, enqueue, markUnknown,
   resume, updateQueued, type QueuedMessage, type TaskQueue,
 } from "@awi/core";
-import { initialSchema, runtimeSchema, viewSchema } from "./schema.js";
+import { engineSessionSchema, initialSchema, runtimeSchema, viewSchema } from "./schema.js";
 
 type Row = Record<string, unknown>;
 type StoredResult = { operationId: string; task: TaskQueue; messageId?: string };
@@ -73,7 +73,7 @@ export class StateStore {
     const migrationTable = this.db.prepare("SELECT name FROM sqlite_master WHERE type='table' AND name='schema_migrations'").get();
     const otherTables = this.db.prepare("SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%' AND name <> 'schema_migrations'").all();
     if (!migrationTable && otherTables.length) throw new Error("알 수 없는 기존 DB 스키마입니다. 원본을 보존하고 수동으로 확인해 주세요.");
-    const migrations = [initialSchema, viewSchema, runtimeSchema];
+    const migrations = [initialSchema, viewSchema, runtimeSchema, engineSessionSchema];
     let applied = 0;
     if (migrationTable) {
       const rows = this.db.prepare("SELECT id, checksum FROM schema_migrations ORDER BY id").all() as { id: number; checksum: string }[];
@@ -484,6 +484,27 @@ export class StateStore {
       this.appendEvent(taskId, "task.archived", { taskId, revision: before.revision + 1 });
       return this.getTaskQueue(taskId);
     });
+  }
+
+
+  saveEngineSession(taskId: string, value: { engine: string; sessionFile: string; cwd: string; phase: "discussion" | "execution" }): void {
+    if (!value.sessionFile.trim() || !value.cwd.trim()) throw new Error("엔진 세션 경로와 cwd가 필요합니다.");
+    this.db.prepare(`
+      INSERT INTO engine_sessions(task_id,engine,session_file,cwd,phase,updated_at)
+      VALUES(?,?,?,?,?,?)
+      ON CONFLICT(task_id) DO UPDATE SET engine=excluded.engine,session_file=excluded.session_file,cwd=excluded.cwd,phase=excluded.phase,updated_at=excluded.updated_at
+    `).run(taskId, value.engine, value.sessionFile, value.cwd, value.phase, new Date().toISOString());
+  }
+
+  getEngineSession(taskId: string): { engine: string; sessionFile: string; cwd: string; phase: "discussion" | "execution" } | undefined {
+    const row = this.db.prepare("SELECT engine,session_file,cwd,phase FROM engine_sessions WHERE task_id=?").get(taskId) as Row | undefined;
+    return row ? { engine: row.engine as string, sessionFile: row.session_file as string, cwd: row.cwd as string,
+      phase: row.phase as "discussion" | "execution" } : undefined;
+  }
+
+  listRecoverableTaskIds(): string[] {
+    return (this.db.prepare("SELECT id FROM tasks WHERE disposition='active' AND phase <> 'archived' ORDER BY created_at").all() as { id: string }[])
+      .map((row) => row.id);
   }
 
   /** requestId 재사용을 payload 해시로 판별하며 상태·메시지·이벤트·operation을 원자적으로 저장한다. */

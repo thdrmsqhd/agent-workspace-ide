@@ -135,3 +135,14 @@ CREATE TABLE artifacts (
 );
 CREATE INDEX artifacts_task ON artifacts(task_id, created_at);
 `;
+
+export const engineSessionSchema = `
+CREATE TABLE engine_sessions (
+  task_id TEXT PRIMARY KEY REFERENCES tasks(id) ON DELETE RESTRICT,
+  engine TEXT NOT NULL,
+  session_file TEXT NOT NULL,
+  cwd TEXT NOT NULL,
+  phase TEXT NOT NULL CHECK (phase IN ('discussion','execution')),
+  updated_at TEXT NOT NULL
+);
+`;

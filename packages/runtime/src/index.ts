@@ -53,6 +53,7 @@ interface SessionRecord {
   sessionFile: string;
   phase: "discussion" | "execution";
   cwd: string;
+  eventCursor: number;
 }
 
 export interface RuntimeOptions {
@@ -390,7 +391,8 @@ export class WorkspaceRuntime {
     if (!alive) {
       const adapter = await this.options.engineFactory.create(taskId, session.cwd, settings, session.phase, session.sessionFile);
       await adapter.setSubagentSubscription("progress");
-      session = { ...session, adapter };
+      await adapter.subscribeSubagents("progress");
+      session = { ...session, adapter, eventCursor:0 };
       this.#sessions.set(taskId, session);
     }
 
@@ -422,6 +424,78 @@ export class WorkspaceRuntime {
 
   archiveTask(taskId: string): void {
     this.options.store.archiveTask(taskId);
+  }
+
+
+  async recoverTask(taskId: string): Promise<void> {
+    if (this.#sessions.has(taskId)) return;
+    const stored = this.options.store.getEngineSession(taskId);
+    if (!stored) throw new Error("복구할 엔진 세션 참조가 없습니다.");
+    const settingRow = this.options.store.getSettingsSnapshot("task", taskId);
+    if (!settingRow) throw new Error("복구할 작업 설정 스냅샷이 없습니다.");
+    const raw = settingRow.settings;
+    const snapshot: TaskSettingsSnapshot = {
+      taskId,
+      projectId: this.options.store.getTaskInfo(taskId).projectId,
+      engine: String(raw.engine ?? stored.engine),
+      model: String(raw.model ?? ""),
+      mode: raw.mode === "automatic" ? "automatic" : "manual",
+      capturedAt: String(raw.capturedAt ?? new Date(0).toISOString()),
+      sourceRevision: Number(raw.sourceRevision ?? 0),
+    };
+    this.options.settings.restoreTask(snapshot);
+    const adapter = await this.options.engineFactory.create(taskId, stored.cwd, snapshot, stored.phase, stored.sessionFile);
+    await adapter.subscribeSubagents("progress");
+    const sessionFile = await adapter.sessionFile();
+    this.#sessions.set(taskId, { adapter, sessionFile, phase:stored.phase, cwd:stored.cwd, eventCursor:0 });
+    this.options.store.saveEngineSession(taskId, { engine:snapshot.engine, sessionFile, cwd:stored.cwd, phase:stored.phase });
+  }
+
+  async recoverAll(): Promise<{ recovered: string[]; failed: Array<{ taskId: string; error: string }> }> {
+    const recovered: string[] = [];
+    const failed: Array<{ taskId: string; error: string }> = [];
+    for (const taskId of this.options.store.listRecoverableTaskIds()) {
+      if (!this.options.store.getEngineSession(taskId)) continue;
+      try { await this.recoverTask(taskId); recovered.push(taskId); }
+      catch (error) { failed.push({ taskId, error: error instanceof Error ? error.message : String(error) }); }
+    }
+    return { recovered, failed };
+  }
+
+  async syncEngineEvents(taskId: string): Promise<{ nextCursor: number; events: readonly Record<string, unknown>[] }> {
+    const session = this.requireSession(taskId);
+    const all = session.adapter.events as readonly Record<string, unknown>[];
+    const fresh = all.slice(session.eventCursor);
+    let nextCursor = all.length;
+    for (const event of fresh) {
+      if (event.type !== "extension_ui_request" || typeof event.id !== "string") continue;
+      const method = typeof event.method === "string" ? event.method : "input";
+      const message = typeof event.message === "string" ? event.message : typeof event.title === "string" ? event.title : method;
+      const expiresAt = typeof event.timeout === "number" && event.timeout > 0
+        ? new Date(Date.now() + event.timeout).toISOString() : undefined;
+      this.options.store.createInputRequest(taskId, { engineRequestId:event.id, method, message, raw:event }, expiresAt);
+    }
+    this.#sessions.set(taskId, { ...session, eventCursor:nextCursor });
+    return { nextCursor, events:fresh };
+  }
+
+  respondInput(taskId: string, inputRequestId: string, engineRequestId: string, response: { value?: string; confirmed?: boolean; cancelled?: boolean }): void {
+    const session = this.requireSession(taskId);
+    this.options.store.respondInputRequest(inputRequestId, response);
+    session.adapter.respondExtensionUi(engineRequestId, response);
+  }
+
+  async subagents(taskId: string): Promise<Record<string, unknown>> {
+    return this.requireSession(taskId).adapter.getSubagents();
+  }
+
+  async reconnectTask(taskId: string): Promise<void> {
+    const session = this.#sessions.get(taskId);
+    if (session) await session.adapter.shutdown(taskId);
+    this.#sessions.delete(taskId);
+    this.options.store.setTaskRunState(taskId, "reconnecting", "paused");
+    await this.recoverTask(taskId);
+    this.options.store.setTaskRunState(taskId, "paused", "paused");
   }
 
   async shutdown(): Promise<void> {

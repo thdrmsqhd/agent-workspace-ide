@@ -100,6 +100,12 @@ export class OmpEngineAdapter {
   get ready(): Frame | undefined { return this.#ready; }
   get events(): readonly Frame[] { return [...this.#events]; }
 
+  sendFrame(frame: Frame): void {
+    const handle = this.#handle;
+    if (!handle) throw new Error("OMP 세션이 시작되지 않았습니다.");
+    handle.child.stdin.write(JSON.stringify(frame) + "\n");
+  }
+
   async send(command: Frame, timeoutMs = 60_000): Promise<Frame> {
     const handle = this.#handle;
     if (!handle) throw new Error("OMP 세션이 시작되지 않았습니다.");
@@ -136,6 +142,23 @@ export class OmpEngineAdapter {
       throw new Error("OMP 세션 파일을 확인할 수 없습니다.");
     }
     return data.sessionFile;
+  }
+
+  async subscribeSubagents(level: "off" | "progress" | "events" = "progress"): Promise<Frame> {
+    return this.send({ type: "set_subagent_subscription", level });
+  }
+
+  async getSubagents(): Promise<Frame> {
+    return this.send({ type: "get_subagents" });
+  }
+
+  async getSubagentMessages(subagentId: string, fromByte?: number): Promise<Frame> {
+    return this.send({ type: "get_subagent_messages", subagentId, ...(fromByte === undefined ? {} : { fromByte }) });
+  }
+
+  respondExtensionUi(id: string, value: { value?: string; confirmed?: boolean; cancelled?: boolean; timedOut?: boolean }): void {
+    if (!id.trim()) throw new Error("extension UI 요청 ID가 필요합니다.");
+    this.sendFrame({ type: "extension_ui_response", id, ...value });
   }
 
   async switchSession(sessionPath: string): Promise<void> {
