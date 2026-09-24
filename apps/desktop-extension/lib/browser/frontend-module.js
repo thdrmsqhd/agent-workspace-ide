@@ -21,6 +21,21 @@ function button(label,action){
 function input(placeholder){
   const i=el("input");i.placeholder=placeholder;return i;
 }
+function renderReviewDiff(container,result){
+  container.replaceChildren();
+  if(result.binary){container.append(el("div","바이너리 파일은 텍스트 Diff로 표시하지 않습니다.","awi-card"));return;}
+  const model=result.model;if(!model)return;
+  const wrap=el("div");wrap.style.display="grid";wrap.style.gridTemplateColumns="1fr 90px 1fr";wrap.style.height="420px";
+  const left=el("ol");const links=el("div");const right=el("ol");
+  for(const pane of [left,right]){pane.style.overflow="auto";pane.style.margin="0";pane.style.padding="8px 8px 24px 54px";pane.style.whiteSpace="pre";pane.style.fontFamily="monospace";}
+  const blockFor=(side,index)=>model.blocks.find(b=>{const s=side==="old"?b.oldStart:b.newStart;const e=side==="old"?b.oldEnd:b.newEnd;return s===e?index===s:index>=s&&index<e;});
+  const fill=(pane,source,side)=>source.forEach((line,index)=>{const li=el("li",line.text||" ");li.dataset.line=String(index);const b=blockFor(side,index);
+    if(b)li.style.background=b.kind==="insert"?"rgba(70,160,90,.20)":b.kind==="delete"?"rgba(210,70,70,.18)":"rgba(200,155,60,.16)";pane.append(li);});
+  fill(left,model.oldLines,"old");fill(right,model.newLines,"new");
+  links.style.overflow="auto";links.style.borderLeft="1px solid #555";links.style.borderRight="1px solid #555";
+  model.blocks.forEach((b,index)=>{links.append(button(`${index+1} · ${b.kind}`,()=>{left.querySelector(`[data-line="${b.oldStart}"]`)?.scrollIntoView({block:"center"});right.querySelector(`[data-line="${b.newStart}"]`)?.scrollIntoView({block:"center"});}));});
+  wrap.append(left,links,right);container.append(wrap);
+}
 
 class AwiDashboardWidget extends BaseWidget{
   constructor(service,opener){
@@ -99,6 +114,15 @@ class AwiDashboardWidget extends BaseWidget{
         if(task.status==="paused")controls.append(button("재개",()=>this.action(()=>this.service.resumeTask(task.id))));
         controls.append(button("취소",()=>this.action(()=>this.service.cancelTask(task.id))));
         if(task.archived===false && task.status!=="running")controls.append(button("보관",()=>this.action(()=>this.service.archiveTask(task.id))));
+        controls.append(button("결과 검토",()=>this.action(async()=>{
+          const review=await this.service.review(task.id);
+          const panel=el("section",undefined,"awi-card");panel.append(el("h3","결과 검토"),el("div",`반영 상태: ${review.integrationState}`));
+          for(const check of review.checks)panel.append(el("div",`${check.name}: ${check.status}`));
+          for(const url of review.urls)panel.append(el("div",url));
+          const diffHost=el("div");panel.append(diffHost);
+          for(const file of review.changedFiles)panel.append(button(file,async()=>renderReviewDiff(diffHost,await this.service.fileDiff(task.id,file))));
+          center.append(panel);
+        })));
         center.append(controls);
         void this.service.conversation(task.id).then(messages=>{
           for(const old of center.querySelectorAll(".awi-message"))old.remove();

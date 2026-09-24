@@ -1,9 +1,11 @@
 import { execFile } from "node:child_process";
-import { readdir } from "node:fs/promises";
+import { readFile, readdir } from "node:fs/promises";
 import { join } from "node:path";
 import { pathToFileURL } from "node:url";
 import { promisify } from "node:util";
 import type { StateStore } from "@awi/persistence";
+import { compareText, type DiffModel } from "@awi/diff";
+import { resolveWithin } from "@awi/worktrees";
 import type { WorkspaceRuntime } from "@awi/runtime";
 import type { AgentItem, InputRequestUiItem, TaskItem, WorkspaceData } from "@awi/ui";
 
@@ -101,6 +103,48 @@ export class ApplicationController {
 
   conversation(taskId:string):Array<{id:string;role:string;content:string;createdAt:string}>{
     return this.store.listMessages(taskId).map((item)=>({id:item.id,role:item.role,content:item.content,createdAt:item.createdAt}));
+  }
+
+  async review(taskId:string):Promise<{originalPrompt:string;changedFiles:string[];checks:Array<{name:string;status:string}>;urls:string[];integrationState:string}>{
+    const task=this.store.getTaskInfo(taskId);
+    const project=this.store.getProjectInfo(task.projectId);
+    const root=task.worktreePath ?? project.repoPath;
+    const committed=await exec("git",["diff","--name-only",`${project.defaultBranch}...HEAD`],{cwd:root,encoding:"utf8",windowsHide:true,timeout:10_000}).then(r=>r.stdout.split(/\r?\n/u).filter(Boolean),()=>[]);
+    const status=await exec("git",["status","--porcelain=v1"],{cwd:root,encoding:"utf8",windowsHide:true,timeout:10_000}).then(r=>r.stdout.split(/\r?\n/u).filter(Boolean).map(line=>line.slice(3).split(" -> ").at(-1)).filter(Boolean),()=>[]);
+    const changedFiles=[...new Set([...committed,...status])].sort();
+    const artifact=this.store.latestArtifact(taskId,"review");
+    const checks=Array.isArray(artifact?.metadata.checks)
+      ? artifact.metadata.checks.flatMap(item=>item&&typeof item==="object"&&typeof (item as Record<string,unknown>).name==="string"&&typeof (item as Record<string,unknown>).status==="string"
+        ? [{name:(item as Record<string,unknown>).name as string,status:(item as Record<string,unknown>).status as string}]:[])
+      : [];
+    const urls=Array.isArray(artifact?.metadata.urls)?artifact.metadata.urls.filter((x):x is string=>typeof x==="string"):[];
+    return {originalPrompt:task.originalPrompt,changedFiles,checks,urls,integrationState:task.integrationState};
+  }
+
+  async fileDiff(taskId:string,relativePath:string):Promise<{binary:boolean;model?:DiffModel}>{
+    const task=this.store.getTaskInfo(taskId);
+    const project=this.store.getProjectInfo(task.projectId);
+    const root=task.worktreePath ?? project.repoPath;
+    const path=resolveWithin(root,relativePath);
+    const decode=(bytes:Uint8Array):string=>new TextDecoder("utf-8",{fatal:true}).decode(bytes);
+    let oldText="";
+    try{
+      const result=await exec("git",["show",`${project.defaultBranch}:${relativePath}`],{cwd:root,encoding:"buffer",windowsHide:true,timeout:10_000,maxBuffer:16*1024*1024});
+      oldText=decode(result.stdout);
+    }catch(error){
+      const e=error as Error&{stdout?:Buffer};
+      if(e.stdout?.length){try{oldText=decode(e.stdout);}catch{return {binary:true};}}
+    }
+    let newText="";
+    try{newText=decode(await readFile(path));}
+    catch(error){
+      const code=(error as NodeJS.ErrnoException).code;
+      if(code!=="ENOENT"){
+        if(error instanceof TypeError)return {binary:true};
+        try{newText=decode(await readFile(path));}catch{return {binary:true};}
+      }
+    }
+    return {binary:false,model:compareText(oldText,newText)};
   }
 
   async files(taskId:string,maxEntries=800):Promise<Array<{path:string;uri:string;isDirectory:boolean}>>{
