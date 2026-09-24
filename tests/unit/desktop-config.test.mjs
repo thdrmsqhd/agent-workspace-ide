@@ -4,8 +4,11 @@ import { readFile } from "node:fs/promises";
 
 test("제품 데스크톱 구성은 독립 Electron 타깃과 고정 확장을 가진다",async()=>{
  const pkg=JSON.parse(await readFile("apps/desktop/package.json","utf8"));
+ const extPkg=JSON.parse(await readFile("apps/desktop-extension/package.json","utf8"));
  assert.equal(pkg.theia.target,"electron");
  assert.equal(pkg.dependencies["@theia/electron"],"1.75.0");
+ assert.equal(extPkg.peerDependencies["@theia/editor"],"1.75.0");
+ assert.equal(extPkg.peerDependencies["@theia/workspace"],"1.75.0");
  assert.match(pkg.scripts.rebuild,/rebuild:ffmpeg/);
  assert.match(pkg.scripts["rebuild:ffmpeg"],/@theia\/ffmpeg/);
  assert.ok(pkg.theiaPlugins["redhat.java"]);

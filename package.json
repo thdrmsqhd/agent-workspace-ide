@@ -45,7 +45,7 @@
     "desktop:build": "node scripts/build-windows-app.mjs",
     "acceptance:summary": "node scripts/acceptance-summary.mjs",
     "reuse:evaluate": "node scripts/reuse-evaluate.mjs",
-    "desktop:install": "npm --prefix apps/desktop install --ignore-scripts",
+    "desktop:install": "npm --prefix apps/desktop install --ignore-scripts --install-links",
     "build:app-host": "tsc -p packages/app-host/tsconfig.json",
     "build:workflow": "tsc -p packages/workflow/tsconfig.json",
     "package:win": "node scripts/package-windows-app.mjs",

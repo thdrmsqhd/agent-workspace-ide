@@ -28,7 +28,7 @@ jobs:
       - name: Build AWI runtime packages
         run: npm run build
       - name: Install desktop dependencies
-        run: npm --prefix apps/desktop install --ignore-scripts
+        run: npm --prefix apps/desktop install --ignore-scripts --install-links
       - name: Download pinned Open VSX plugins
         run: npm --prefix apps/desktop run download:plugins
       - name: Rebuild Electron native modules

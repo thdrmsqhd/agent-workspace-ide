@@ -13,7 +13,7 @@ async function run(command,args){
     child.once("exit",(code)=>code===0?resolve():reject(new Error(`${command} ${args.join(" ")} 실패: ${code}`)));
   });
 }
-await run("npm.cmd",["install","--ignore-scripts"]);
+await run("npm.cmd",["install","--ignore-scripts","--install-links"]);
 await run("npm.cmd",["run","download:plugins"]);
 await run("npm.cmd",["run","rebuild"]);
 await run("npm.cmd",["run","build"]);

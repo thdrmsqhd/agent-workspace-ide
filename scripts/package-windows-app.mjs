@@ -14,7 +14,7 @@ async function run(command,args,workingDirectory=cwd){
 }
 await run("npm.cmd",["ci"],rootCwd);
 await run("npm.cmd",["run","build"],rootCwd);
-await run("npm.cmd",["install","--ignore-scripts"]);
+await run("npm.cmd",["install","--ignore-scripts","--install-links"]);
 await run("npm.cmd",["run","download:plugins"]);
 await run("npm.cmd",["run","rebuild"]);
 await run("npm.cmd",["run","build"]);
