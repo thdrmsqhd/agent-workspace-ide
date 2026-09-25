@@ -9,52 +9,62 @@
     {
       "name": "스캔 대상",
       "detail": "packages\\core\\src (2개 파일)",
-      "result": "note"
+      "result": "note",
+      "at": 0
     },
     {
       "name": "스캔 대상",
       "detail": "packages\\ui\\src (3개 파일)",
-      "result": "note"
+      "result": "note",
+      "at": 1
     },
     {
       "name": "스캔 대상",
       "detail": "packages\\contracts\\src (1개 파일)",
-      "result": "note"
+      "result": "note",
+      "at": 3
     },
     {
       "name": "엔진 경계 정적 스캔",
       "detail": "6개 소스 파일, 금지 패턴 6종 0건",
-      "result": "ok"
+      "result": "ok",
+      "at": 3
     },
     {
       "name": "평가 기준",
       "detail": "8개 기준, 가중치 합 100",
-      "result": "note"
+      "result": "note",
+      "at": 3
     },
     {
       "name": "게이트 문서 원본",
       "detail": "검증 0.0% / 측정 0.0% → undetermined",
-      "result": "ok"
+      "result": "ok",
+      "at": 60
     },
     {
       "name": "게이트 전부 측정·통과 85%",
       "detail": "검증 85.0% / 측정 100.0% → reuse-candidate",
-      "result": "ok"
+      "result": "ok",
+      "at": 116
     },
     {
       "name": "게이트 전부 측정·통과 70%",
       "detail": "검증 70.0% / 측정 100.0% → do-not-fork",
-      "result": "ok"
+      "result": "ok",
+      "at": 174
     },
     {
       "name": "게이트 일부만 측정·측정분 전부 통과",
       "detail": "검증 50.0% / 측정 50.0% → undetermined",
-      "result": "ok"
+      "result": "ok",
+      "at": 226
     },
     {
       "name": "평가 문서 복원",
       "detail": "sha256 14b8b0a35555… 일치",
-      "result": "ok"
+      "result": "ok",
+      "at": 232
     }
   ],
   "expected": "OMP 원시 타입이 core/UI에 없고, 미측정 항목이 80% 근거로 둔갑하지 않는다.",
@@ -65,10 +75,10 @@
     "docs/evidence/acceptance/AT-23/steps.txt"
   ],
   "env": {
-    "commit": "fa10fad",
+    "commit": "c33a536",
     "node": "v24.19.0",
     "platform": "win32",
     "arch": "x64",
-    "recordedAt": "2026-09-24T13:04:31.905Z"
+    "recordedAt": "2026-09-25T00:13:08.495Z"
   }
 }

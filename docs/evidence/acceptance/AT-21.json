@@ -9,37 +9,44 @@
     {
       "name": "삽입·삭제·교체 블록 경계",
       "detail": "insert {\"kind\":\"insert\",\"oldStart\":1,\"oldEnd\":1,\"newStart\":1,\"newEnd\":2} / delete 오른쪽 경계 1 / replace 좌 1-2",
-      "result": "ok"
+      "result": "ok",
+      "at": 0
     },
     {
       "name": "실제 빈 줄 구분",
       "detail": "a\\n\\nb\\n = 3줄(둘째가 실제 빈 줄), 빈 줄 하나 추가는 insert 블록으로 잡힘",
-      "result": "ok"
+      "result": "ok",
+      "at": 0
     },
     {
       "name": "끝 개행",
       "detail": "a\\n = 1줄(eol \\n), a = 1줄(eol 없음), 빈 파일 = 0줄",
-      "result": "ok"
+      "result": "ok",
+      "at": 0
     },
     {
       "name": "EOL 보존과 비교 기준",
       "detail": "CRLF는 \\r\\n으로 보존되고 CRLF→LF 변경은 줄 텍스트가 같아도 replace로 드러남",
-      "result": "ok"
+      "result": "ok",
+      "at": 0
     },
     {
       "name": "긴 줄",
       "detail": "20만 자 한 줄이 1줄로 유지되고 삽입 위치가 정확함",
-      "result": "ok"
+      "result": "ok",
+      "at": 2
     },
     {
       "name": "대용량 표기",
       "detail": "10만 줄 초과·5MB 초과 모두 precision=too_large로 명시(조용한 오답 없음)",
-      "result": "ok"
+      "result": "ok",
+      "at": 20
     },
     {
       "name": "블록 연결",
       "detail": "targetForBlock이 좌/우(1, 1)를 함께 반환하고 없는 블록은 RangeError",
-      "result": "ok"
+      "result": "ok",
+      "at": 20
     }
   ],
   "expected": "가짜 빈 행 0, 변경 블록이 좌/우 위치를 함께 가리킴, 비교 기준이 명확함.",
@@ -49,10 +56,10 @@
     "docs/evidence/acceptance/AT-21/steps.txt"
   ],
   "env": {
-    "commit": "fa10fad",
+    "commit": "c33a536",
     "node": "v24.19.0",
     "platform": "win32",
     "arch": "x64",
-    "recordedAt": "2026-09-24T13:04:29.440Z"
+    "recordedAt": "2026-09-25T00:13:06.062Z"
   }
 }

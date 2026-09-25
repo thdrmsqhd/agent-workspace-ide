@@ -8,31 +8,34 @@
   "steps": [
     {
       "name": "없는 기준 ref로 준비 실패",
-      "detail": "워크트리 1개(메인만), phase=discussion, HEAD=c7da99f 유지",
-      "result": "ok"
+      "detail": "워크트리 1개(메인만), phase=discussion, HEAD=01822d4 유지",
+      "result": "ok",
+      "at": 642
     },
     {
       "name": "같은 단계 재시도 성공",
-      "detail": "C:/Users/gbsong/AppData/Local/Temp/awi-at03-3ZabhY/worktrees/218fcd1c-cc15-46e0-9c24-69db4f768996 @ c7da99f (refs/heads/awi/task/218fcd1c-cc15-46e0-9c24-69db4f768996)",
-      "result": "ok"
+      "detail": "C:/Users/gbsong/AppData/Local/Temp/awi-at03-5kPxq9/worktrees/617a9cdd-905e-4b3c-9e64-8e80679364b1 @ 01822d4 (refs/heads/awi/task/617a9cdd-905e-4b3c-9e64-8e80679364b1)",
+      "result": "ok",
+      "at": 1479
     },
     {
       "name": "시작 이중 클릭 거부",
       "detail": "phase=execution이라 두 번째 startTask가 거부되고 워크트리는 2개(메인 포함) 유지",
-      "result": "ok"
+      "result": "ok",
+      "at": 1501
     }
   ],
   "expected": "준비 결과가 메인 저장소 + 워크트리 하나, 기준 커밋 고정, 실패한 준비는 원본을 건드리지 않고 같은 단계로 재시도된다.",
-  "actual": "메인 + 워크트리 1개 | 기준 커밋 c7da99f 고정 | 준비 실패 후 같은 단계 재시도 성공",
+  "actual": "메인 + 워크트리 1개 | 기준 커밋 01822d4 고정 | 준비 실패 후 같은 단계 재시도 성공",
   "artifacts": [
     "docs/evidence/acceptance/AT-03/worktrees.json",
     "docs/evidence/acceptance/AT-03/steps.txt"
   ],
   "env": {
-    "commit": "fa10fad",
+    "commit": "c33a536",
     "node": "v24.19.0",
     "platform": "win32",
     "arch": "x64",
-    "recordedAt": "2026-09-24T13:04:26.764Z"
+    "recordedAt": "2026-09-25T00:13:03.522Z"
   }
 }

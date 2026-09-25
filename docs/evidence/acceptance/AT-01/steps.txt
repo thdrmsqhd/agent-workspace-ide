@@ -1,15 +1,7 @@
-ok	사전 조건	격리 홈 C:\Users\gbsong\AppData\Local\Temp\awi-at01-OTX8op\home, 저장소 2개 생성
-note	first-launch: 워크스페이스 없이 대시보드가 뜨지 않아 저장소를 열어 다시 기동	C:\Users\gbsong\AppData\Local\Temp\awi-at01-OTX8op\repos\alpha-project
-note	first-launch: 워크스페이스 신뢰 모달 닫기	클릭
-note	녹화 시작	C:\Users\gbsong\AppData\Local\Temp\awi-at-01-frames (CDP 캡처 130ms 간격)
-ok	앱 실행	제목="Agent Workspace - alpha-project - Eclipse Theia", 대시보드 3영역 확인
-ok	프로젝트 등록: alpha-project	C:\Users\gbsong\AppData\Local\Temp\awi-at01-OTX8op\repos\alpha-project
-ok	프로젝트 등록: beta-project	C:\Users\gbsong\AppData\Local\Temp\awi-at01-OTX8op\repos\beta-project
+ok	사전 조건	격리 홈 C:\Users\gbsong\AppData\Local\Temp\awi-at01-hXflvG\home, 저장소 2개 생성
+ok	앱 실행	제목="Agent Workspace - Eclipse Theia", 대시보드 3영역 확인
+ok	프로젝트 등록: alpha-project	C:\Users\gbsong\AppData\Local\Temp\awi-at01-hXflvG\repos\alpha-project
+ok	프로젝트 등록: beta-project	C:\Users\gbsong\AppData\Local\Temp\awi-at01-hXflvG\repos\beta-project
 ok	우측 프로젝트·세션 영역	프로젝트 · 세션 | alpha-project | beta-project
-note	녹화 구간 종료	88프레임 / 12.7초
 ok	앱 종료	재시작 검증을 위해 종료
-note	second-launch: 워크스페이스 없이 대시보드가 뜨지 않아 저장소를 열어 다시 기동	C:\Users\gbsong\AppData\Local\Temp\awi-at01-OTX8op\repos\alpha-project
-note	녹화 시작	C:\Users\gbsong\AppData\Local\Temp\awi-at-01-frames (CDP 캡처 130ms 간격)
 ok	재시작 복원	프로젝트 · 세션 | alpha-project | beta-project
-note	녹화 구간 종료	20프레임 / 3.1초
-ok	시연 영상	108프레임 → docs/evidence/acceptance/AT-01/recording.mp4 (캡션 5개)

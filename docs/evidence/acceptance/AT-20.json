@@ -8,58 +8,69 @@
   "steps": [
     {
       "name": "워크트리 준비",
-      "detail": "C:\\Users\\gbsong\\AppData\\Local\\Temp\\awi-at20-SAQmIz\\worktrees\\fec3cb33-2a76-442a-ba47-4c4ce18e2155",
-      "result": "ok"
+      "detail": "C:\\Users\\gbsong\\AppData\\Local\\Temp\\awi-at20-zzL0rG\\worktrees\\94dad6b2-35c1-4eec-aea5-57dabbbd348e",
+      "result": "ok",
+      "at": 1338
     },
     {
       "name": "정리 차단 사유",
       "detail": "깨끗한 상태는 차단 0, 변경·프로세스·버퍼·디버거·반영 실패는 각각 차단 사유로 계산",
-      "result": "ok"
+      "result": "ok",
+      "at": 1338
     },
     {
       "name": "미반영 변경 보류",
       "detail": "untracked 파일이 있으면 정리를 거부하고 워크트리 유지",
-      "result": "ok"
+      "result": "ok",
+      "at": 1641
     },
     {
       "name": "실행 중 정리 차단",
       "detail": "엔진이 워크트리를 cwd로 잡고 있는 동안에는 정리 대상이 아니다.",
-      "result": "note"
+      "result": "note",
+      "at": 1641
     },
     {
       "name": "소유 저장소 확인",
       "detail": "다른 저장소 경로로는 정리 거부",
-      "result": "ok"
+      "result": "ok",
+      "at": 1779
     },
     {
       "name": "실행 중 완료 금지",
       "detail": "실행 중 작업은 완료 처리할 수 없다",
-      "result": "ok"
+      "result": "ok",
+      "at": 1779
     },
     {
       "name": "취소 기록 보존",
       "detail": "disposition=cancelled, runState=paused, 원래 요청 유지",
-      "result": "ok"
+      "result": "ok",
+      "at": 1782
     },
     {
       "name": "작업 종료",
       "detail": "엔진·프로세스 종료 후 정리 단계로 진행",
-      "result": "ok"
+      "result": "ok",
+      "at": 2038
     },
     {
       "name": "안전한 정리",
-      "detail": "워크트리 제거, 브랜치 awi/task/fec3cb33… 보존, 원본 HEAD 유지",
-      "result": "ok"
+      "detail": "워크트리 제거, 브랜치 awi/task/94dad6b2… 보존, 원본 HEAD 유지",
+      "result": "ok",
+      "at": 2448
     },
     {
       "name": "보관 기록 보존",
       "detail": "보관은 archived 표시이며 행·원래 요청이 삭제되지 않는다",
-      "result": "ok"
+      "result": "ok",
+      "at": 2448
     },
     {
       "name": "병합 후 연결 작업",
       "detail": "병합 완료면 직전 작업을 가리키는 linked-task 계획, 미병합이면 same-task",
-      "result": "ok"
+      "result": "ok",
+      "at": 2448
     }
   ],
   "expected": "병합 후에는 새 연결 작업이 계획되고, 취소·보관 기록은 삭제되지 않고 남으며, 워크트리는 안전할 때만 정리되고 브랜치·이력은 보존된다.",
@@ -69,10 +80,10 @@
     "docs/evidence/acceptance/AT-20/steps.txt"
   ],
   "env": {
-    "commit": "fa10fad",
+    "commit": "c33a536",
     "node": "v24.19.0",
     "platform": "win32",
     "arch": "x64",
-    "recordedAt": "2026-09-24T13:04:29.387Z"
+    "recordedAt": "2026-09-25T00:13:06.012Z"
   }
 }

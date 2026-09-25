@@ -1,21 +1,21 @@
 {
   "captured": {
-    "dd92064d-a369-4790-99c7-a7f5d74cb7e0": {
-      "taskId": "dd92064d-a369-4790-99c7-a7f5d74cb7e0",
-      "projectId": "c60fa0d5-d383-4ec8-9afa-d3e5577122f3",
+    "2a5eb460-8e97-4e6d-9fd4-e61714af2cea": {
+      "taskId": "2a5eb460-8e97-4e6d-9fd4-e61714af2cea",
+      "projectId": "8d014b2a-2d59-4c27-ac78-9ff74c7915b5",
       "engine": "omp",
       "model": "model-b",
       "mode": "manual",
-      "capturedAt": "2026-09-24T13:04:29.843Z",
+      "capturedAt": "2026-09-25T00:13:06.451Z",
       "sourceRevision": 1
     },
-    "1fd1d79a-9139-4154-8568-67d01c06bd12": {
-      "taskId": "1fd1d79a-9139-4154-8568-67d01c06bd12",
-      "projectId": "c60fa0d5-d383-4ec8-9afa-d3e5577122f3",
+    "de3a9169-17c2-40de-868b-1edcba17504e": {
+      "taskId": "de3a9169-17c2-40de-868b-1edcba17504e",
+      "projectId": "8d014b2a-2d59-4c27-ac78-9ff74c7915b5",
       "engine": "omp",
       "model": "model-a",
       "mode": "automatic",
-      "capturedAt": "2026-09-24T13:04:29.775Z",
+      "capturedAt": "2026-09-25T00:13:06.375Z",
       "sourceRevision": 0
     }
   }

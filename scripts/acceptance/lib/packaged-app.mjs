@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 // CI 패키지 앱(win-unpacked) 준비·구동 도구.
 // - 준비: app.asar를 풀어 resources/app으로 만들고 창을 화면 밖·포커스 불가로 바꾼다(검증 전용, 산출물 사본에만).
-// - 구동: USERPROFILE을 임시 홈으로 격리해 사용자의 실제 제품 상태(~/.agent-workspace-ide)를 건드리지 않는다.
+// - 구동: AWI_DATA_DIR로 제품 데이터만 임시 폴더로 격리해 사용자의 실제 상태(~/.agent-workspace-ide)를 건드리지 않는다(Theia 프로필은 그대로 둔다).
 import { execFile, spawn } from "node:child_process";
 import { createRequire } from "node:module";
 import { mkdir, readFile, rename, rm, stat, writeFile } from "node:fs/promises";
@@ -69,7 +69,9 @@ export async function launchPackagedApp({ home, artifactRoot, port = 9229, repo 
     cwd: paths.unpacked,
     stdio: ["ignore", "pipe", "pipe"],
     windowsHide: true,
-    env: { ...process.env, USERPROFILE: home, HOME: home, APPDATA: join(home, "AppData", "Roaming"), LOCALAPPDATA: join(home, "AppData", "Local") },
+    // 제품 데이터만 AWI_DATA_DIR로 격리한다. USERPROFILE까지 바꾸면 Theia 프로필이 새로 만들어져
+    // 제품 확장이 렌더되지 않는다(대시보드 미표시로 실측).
+    env: { ...process.env, AWI_DATA_DIR: join(home, "product-data") },
   });
   child.stdout.on("data", (chunk) => logs.push(String(chunk)));
   child.stderr.on("data", (chunk) => logs.push(String(chunk)));
